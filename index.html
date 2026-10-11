@@ -2,7 +2,7 @@
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3a1c71"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><!-- vocab-build: 20261011-210751 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -328,23 +328,89 @@ const Importer = (() => {
     }
     return rows;
   }
-  function docxXmlToRows(xml) {
+  function docxXmlToDoc(xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length) throw new Error('document.xml 解析失败');
     const body = kids(doc.documentElement, 'body')[0]; if (!body) throw new Error('document.xml 没有正文');
-    const title = [], tables = [];
+    const paras = [], tables = [], titleParts = [];
+    let sawTable = false;
     const walk = el => {
       for (let n = el.firstChild; n; n = n.nextSibling) {
         if (n.nodeType !== 1) continue;
-        if (n.localName === 'p') { if (!tables.length) { const t = paraText(n).trim(); if (t) title.push(t); } }
-        else if (n.localName === 'tbl') tables.push(n);
+        if (n.localName === 'p') {
+          const t = paraText(n);
+          if (t.trim()) {
+            paras.push(t);
+            if (!sawTable) titleParts.push(t.trim());
+          }
+        } else if (n.localName === 'tbl') { sawTable = true; tables.push(n); }
         else if (n.localName === 'sdt') { const c = kids(n, 'sdtContent')[0]; if (c) walk(c); }
       }
     };
     walk(body);
+    return { paras, tables, titleBefore: titleParts.join(' ') };
+  }
+  function docxXmlToRows(xml) {
+    const { tables, paras } = docxXmlToDoc(xml);
     if (!tables.length) throw new Error('文档里没有找到表格（需要 序号|中文|词性|英文 表格）');
+    const title = [];
+    for (const p of paras) { title.push(p.trim()); if (title.length) break; } // unused when tables exist; title comes from paras before first table historically
+    // Prefer paragraphs that appear before the first table as title — rebuild by walking again is heavy; use first para as title hint
     const rows = []; tables.forEach(t => rows.push(...tableRows(t)));
-    return { title: title.join(' '), rows };
+    return { title: (paras[0] || '').trim(), rows, paras };
+  }
+  /* Split a plain "EN + tabs/spaces + ZH" (or ZH-first) line into {en, cn}. Returns null if not a bilingual pair. */
+  function splitEnZhLine(line) {
+    const raw = String(line || '').replace(/\u00a0/g, ' ').replace(/\r/g, '');
+    if (!raw.trim()) return null;
+    // Tabs (or runs of tabs) are the clearest separator
+    if (/\t/.test(raw)) {
+      const parts = raw.split(/\t+/).map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        const left = parts[0], right = parts.slice(1).join(' ');
+        if (CJK.test(left) && !CJK.test(right)) return { cn: left, en: right };
+        if (!CJK.test(left) && CJK.test(right)) return { en: left, cn: right };
+        if (CJK.test(left) && CJK.test(right)) {
+          // both sides have CJK — prefer: if left is mostly Latin tokens, EN first
+          const leftLatin = (left.match(/[A-Za-z]/g) || []).length;
+          const rightLatin = (right.match(/[A-Za-z]/g) || []).length;
+          return leftLatin >= rightLatin ? { en: left, cn: right } : { cn: left, en: right };
+        }
+        return { en: left, cn: right };
+      }
+    }
+    // Multiple spaces (2+) between EN and ZH
+    const m2 = raw.match(/^(.+?) {2,}(.+)$/);
+    if (m2) {
+      const left = m2[1].trim(), right = m2[2].trim();
+      if (CJK.test(left) && /[A-Za-z]/.test(right) && !CJK.test(right)) return { cn: left, en: right };
+      if (/[A-Za-z]/.test(left) && CJK.test(right)) return { en: left, cn: right };
+      if (CJK.test(left) && CJK.test(right) && /[A-Za-z]/.test(left)) return { en: left, cn: right };
+    }
+    // Single-space (or thin) boundary: Latin ... CJK  OR  CJK ... Latin
+    const mEnZh = raw.match(/^([A-Za-z0-9][A-Za-z0-9 .,'’"\/\-&+?!…]*)\s+([\u3400-\u9fff].+)$/);
+    if (mEnZh) return { en: mEnZh[1].trim(), cn: mEnZh[2].trim() };
+    const mZhEn = raw.match(/^([\u3400-\u9fff][^A-Za-z]*)\s+([A-Za-z].+)$/);
+    if (mZhEn) return { cn: mZhEn[1].trim(), en: mZhEn[2].trim() };
+    return null;
+  }
+  function paragraphsToEntries(paras) {
+    const nonempty = paras.map(p => p.replace(/\u00a0/g, ' ')).filter(p => p.trim());
+    if (!nonempty.length) return { title: '', words: [], tips: [] };
+    const title = nonempty[0].trim();
+    const words = [], tips = [];
+    for (let i = 1; i < nonempty.length; i++) {
+      const line = nonempty[i];
+      const pair = splitEnZhLine(line);
+      if (!pair || !pair.en || !pair.cn) {
+        // long Chinese-only / English-only lines become tips rather than silent drops
+        if (line.trim().length > 40) tips.push(line.trim());
+        continue;
+      }
+      const opt = /^\s*\*/.test(pair.en) || /^\s*\*/.test(pair.cn);
+      makeEntries(opt ? '*' : '', pair.cn.replace(/^\*+/, ''), '', pair.en.replace(/^\s*\*+/, '')).forEach(e => words.push(classify(e)));
+    }
+    return { title, words, tips };
   }
   /* ---------- title -> unit / section / pages ---------- */
   const SECWORDS = /(Viewing(?:\s*&\s*Listening)?|Listening|Speaking|Reading|Writing|Grammar|Vocabulary|Culture corner|Project|More practice|Further study|Study skills|Pronunciation|Language|Review|Revision)/i;
@@ -357,7 +423,7 @@ const Importer = (() => {
     sec = sec.replace(/\s*&\s*Listening/i, '');
     if (sec) sec = sec[0].toUpperCase() + sec.slice(1);
     let name = [unit, sec, pages].filter(Boolean).join(' ');
-    if (!unit && !sec) name = clean(String(fallback || t).replace(/\.(docx|csv|txt|json)$/i, '').replace(/[_]+/g, ' ')) || '自定义单词';
+    if (!unit && !sec) name = clean(t) || clean(String(fallback || '').replace(/\.(docx|csv|txt|json)$/i, '').replace(/[_]+/g, ' ')) || '自定义单词';
     return { unit, section: sec || name, pages, name };
   }
   /* ---------- the row parser (port of parse.py + generic rules from fix.py) ---------- */
@@ -584,8 +650,17 @@ const Importer = (() => {
   async function parseDocxBuffer(buf, fileName, opts) {
     const b = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
     const xml = await unzipText(b, 'word/document.xml', opts && opts.forceJs);
-    const { title, rows } = docxXmlToRows(xml);
-    const { words, tips } = rowsToEntries(rows);
+    const docx = docxXmlToDoc(xml); const { paras, tables } = docx;
+    if (tables.length) {
+      const rows = []; tables.forEach(t => rows.push(...tableRows(t)));
+      // Title: paragraphs that appear before any content we care about — use first non-empty para if it isn't a table header
+      const title = (docx.titleBefore || paras[0] || '').trim();
+      const { words, tips } = rowsToEntries(rows);
+      return [{ ...parseTitle(title, fileName), title, words, tips }];
+    }
+    // No tables: treat as plain EN/ZH paragraph list (first para = section title)
+    const { title, words, tips } = paragraphsToEntries(paras);
+    if (!words.length) throw new Error('文档里没有找到表格，也没有「英文 + 空格/制表符 + 中文」的词条列表');
     return [{ ...parseTitle(title, fileName), title, words, tips }];
   }
   function readAB(file) {
@@ -607,7 +682,7 @@ const Importer = (() => {
     items.forEach(it => { it.fileName = name; it.words = it.words.filter(w => w.en && w.cn); });
     return items;
   }
-  return { parseFile, parseDocxBuffer, parseDelimited, parseJSON, parseTitle, rowsToEntries, makeEntries, inflateRaw, unzipText, docxXmlToRows, stats, clean };
+  return { parseFile, parseDocxBuffer, parseDelimited, parseJSON, parseTitle, rowsToEntries, makeEntries, inflateRaw, unzipText, docxXmlToRows, docxXmlToDoc, paragraphsToEntries, splitEnZhLine, stats, clean };
 })();
 
 'use strict';
