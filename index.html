@@ -1721,4 +1721,87 @@ window.VG = { WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { re
   Importer, rebuildData, importItems, deleteSection, handleWordFiles, get PREVIEW() { return PREVIEW; }, exportText, importText, storageCheck, secIdFor, BUILTIN_IDS,
   dueList, newList, newLeftToday, todayPick, setPick, pickedToday, nextUnfinished, migrate, streak, levelInfo, checkSpell, checkSpeech, fuzzyNorm, levenshtein, phraseSimilarity, speechTargets, speechSupported, get SPEECH_OK() { return SPEECH_OK; }, variants, distractors, bonusList, bonusFakes, buildQ, chooseType, startSession, submit, nextCard, ACT, today, hintText, renderHome, stopRecog };
 boot();
-</script></body></html>
+</script>
+<!-- study-timer-v1: daily learning timer -->
+<style id="study-timer-v1-style">
+#studyTimerFab{position:fixed;right:14px;bottom:18px;z-index:9999;border:0;border-radius:28px;padding:12px 16px;background:linear-gradient(135deg,#ff8a00,#e52e71);color:#fff;font-weight:800;font-size:15px;box-shadow:0 4px 14px #160b3370}
+#studyTimerPanel{position:fixed;right:12px;bottom:74px;z-index:9999;width:min(340px,calc(100vw - 24px));max-height:72vh;overflow:auto;background:#fff;color:#241844;border-radius:20px;padding:16px;box-shadow:0 10px 36px #10052270;display:none;font:15px/1.5 -apple-system,BlinkMacSystemFont,sans-serif}
+#studyTimerPanel h3{margin:0 0 10px;color:#3a1c71;font-size:19px}
+#studyTimerPanel .st-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+#studyTimerPanel .st-stat{background:#f4f1ff;border-radius:12px;padding:10px;text-align:center}
+#studyTimerPanel .st-stat b{display:block;font-size:22px;color:#5b2bd6}
+#studyTimerPanel .st-actions{display:flex;gap:8px;margin:10px 0}
+#studyTimerPanel button{border:0;border-radius:12px;padding:10px 12px;font:inherit;font-weight:700;cursor:pointer}
+#studyTimerToggle{flex:1;background:#5b2bd6;color:#fff}
+#studyTimerClose{background:#eee;color:#333}
+#studyTimerPanel .st-chart{height:100px;display:flex;align-items:flex-end;gap:5px;margin:12px 0 4px}
+#studyTimerPanel .st-day{flex:1;min-width:0;text-align:center;font-size:11px;color:#666}
+#studyTimerPanel .st-bar{display:block;width:100%;min-height:3px;background:linear-gradient(#a18cff,#5b2bd6);border-radius:5px 5px 2px 2px;margin-bottom:4px}
+#studyTimerPanel .st-history{font-size:13px;border-top:1px solid #eee;padding:5px 0;display:flex;justify-content:space-between;gap:8px}
+#studyTimerPanel .st-note{font-size:12px;color:#777;margin-top:8px}
+</style>
+<button id="studyTimerFab" type="button" aria-expanded="false">⏱️ 学习计时 00:00</button>
+<section id="studyTimerPanel" aria-label="学习时长统计">
+  <h3>⏱️ 学习时间统计</h3>
+  <div id="studyTimerNow">今天累计：0 分钟</div>
+  <div class="st-actions"><button id="studyTimerToggle" type="button">▶ 开始学习</button><button id="studyTimerClose" type="button">收起</button></div>
+  <div class="st-grid">
+    <div class="st-stat"><b id="studyTimerToday">0分</b>今天学习</div>
+    <div class="st-stat"><b id="studyTimerTotal">0分</b>累计学习</div>
+    <div class="st-stat"><b id="studyTimerAvg">0分</b>近7天日均</div>
+    <div class="st-stat"><b id="studyTimerDays">0天</b>学习天数</div>
+  </div>
+  <h3 style="font-size:16px;margin-top:12px">近7天</h3><div id="studyTimerChart" class="st-chart"></div>
+  <h3 style="font-size:16px;margin-top:12px">最近14天记录</h3><div id="studyTimerHistory"></div>
+  <div class="st-note">计时记录只保存在这台设备的当前浏览器中。切到后台或锁屏会自动暂停；开始学习后请在离开前暂停，避免把休息时间算进去。</div>
+</section>
+<script id="study-timer-v1">
+(function(){
+  'use strict';
+  const KEY='beicinei_study_timer_v1';
+  const $=id=>document.getElementById(id);
+  const pad=n=>String(n).padStart(2,'0');
+  const dayKey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const today=()=>dayKey(new Date());
+  const fmt=s=>{s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;return h? h+'小时'+m+'分':m?m+'分'+(sec?' '+sec+'秒':''):sec+'秒';};
+  const clock=s=>{s=Math.max(0,Math.floor(s||0));return pad(Math.floor(s/60))+':'+pad(s%60);};
+  let data={days:{},running:false,startAt:0};
+  try{const old=JSON.parse(localStorage.getItem(KEY)||'null');if(old&&old.days)data=Object.assign(data,old);}catch(e){}
+  // Recover safely: a reload never counts the time spent away.
+  data.running=false;data.startAt=0;
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+  function secondsFor(k){return Math.max(0,Number(data.days[k])||0);}
+  function elapsed(){return data.running?Math.max(0,Math.floor((Date.now()-data.startAt)/1000)):0;}
+  function totalToday(){return secondsFor(today())+elapsed();}
+  function allTotal(){return Object.keys(data.days).reduce((n,k)=>n+secondsFor(k),0)+elapsed();}
+  function commitElapsed(){if(!data.running)return;const sec=elapsed();if(sec>0){const k=dayKey(new Date(data.startAt));data.days[k]=secondsFor(k)+sec;}data.running=false;data.startAt=0;save();}
+  function start(){if(data.running)return;data.running=true;data.startAt=Date.now();save();render();}
+  function stop(){commitElapsed();render();}
+  function render(){
+    const now=totalToday(),total=allTotal();
+    $('studyTimerFab').textContent=(data.running?'⏸️ 计时中 ':'⏱️ 学习计时 ')+clock(now);
+    $('studyTimerFab').setAttribute('aria-expanded',$('studyTimerPanel').style.display==='block'?'true':'false');
+    $('studyTimerNow').textContent='今天累计：'+fmt(now)+(data.running?'（正在计时）':'');
+    $('studyTimerToggle').textContent=data.running?'⏸ 暂停并保存':'▶ 开始学习';
+    $('studyTimerToday').textContent=fmt(now);
+    $('studyTimerTotal').textContent=fmt(total);
+    const dates=[];for(let i=6;i>=0;i--){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-i);dates.push(dayKey(d));}
+    const sum7=dates.reduce((n,k)=>n+(secondsFor(k)+(k===today()?elapsed():0)),0);
+    $('studyTimerAvg').textContent=fmt(Math.round(sum7/7));
+    $('studyTimerDays').textContent=Object.keys(data.days).filter(k=>secondsFor(k)>0).length+(data.running&&secondsFor(today())===0?'':'')+'天';
+    const max=Math.max(60,...dates.map(secondsFor),today()===dates[6]?elapsed()+secondsFor(today()):0);
+    $('studyTimerChart').innerHTML=dates.map(k=>{const d=new Date(k+'T12:00:00');const v=secondsFor(k)+(k===today()?elapsed():0);const h=Math.max(3,Math.round(v/max*76));return '<div class="st-day"><span class="st-bar" style="height:'+h+'px"></span>'+ (d.getMonth()+1)+'/'+d.getDate()+'<br>'+ (v>=3600?Math.round(v/3600*10)/10+'h':Math.round(v/60)+'m')+'</div>';}).join('');
+    const hist=[];for(let i=0;i<14;i++){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-i);const k=dayKey(d);hist.push('<div class="st-history"><span>'+k+(k===today()?'（今天）':'')+'</span><b>'+fmt(secondsFor(k)+(k===today()?elapsed():0))+'</b></div>');}
+    $('studyTimerHistory').innerHTML=hist.join('');
+  }
+  $('studyTimerFab').addEventListener('click',()=>{const p=$('studyTimerPanel');p.style.display=p.style.display==='block'?'none':'block';render();});
+  $('studyTimerClose').addEventListener('click',()=>{$('studyTimerPanel').style.display='none';});
+  $('studyTimerToggle').addEventListener('click',()=>data.running?stop():start());
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')stop();});
+  window.addEventListener('pagehide',stop);
+  setInterval(render,1000);
+  render();
+})();
+</script>
+
+</body></html>
