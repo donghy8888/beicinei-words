@@ -742,7 +742,7 @@ function defaultState() {
   const sec = {}; SECTIONS.forEach(s => sec[s.id] = true);
   return { v: 1, words: {}, xp: 0, coins: 0, bestCombo: 0, totalRight: 0, totalWrong: 0, killed: 0, days: {},
     avatar: '🧑‍🎓', owned: ['🧑‍🎓'], pick: null, lastPick: null, custom: emptyCustom(), lastBackup: 0,
-    settings: { dailyNew: 15, sections: sec, optional: true, penalty: 'down2', autoSpeak: true, rate: 0.85 }, created: clock() };
+    settings: { dailyNew: 15, sections: sec, optional: true, penalty: 'down2', autoSpeak: true, rate: 0.85, studyOrder: 'reviewFirst' }, created: clock() };
 }
 function migrate(s) {
   const d = defaultState();
@@ -1115,8 +1115,15 @@ function pickNext() {
   const ri = s.retry.findIndex(x => x.at <= s.n && x.id !== s.lastId);
   if (ri >= 0) { const x = s.retry.splice(ri, 1)[0]; return { w: BYID[x.id], mode: 'practice' }; }
   const due = dueList().filter(w => w.id !== s.lastId);
-  if (due.length) return { w: due[0], mode: 'review' };
-  if (newLeftToday() > 0) { const nl = newList().filter(w => w.id !== s.lastId); if (nl.length) return { w: nl[0], mode: 'new' }; }
+  const fresh = newLeftToday() > 0 ? newList().filter(w => w.id !== s.lastId) : [];
+  const newFirst = S.settings.studyOrder === 'newFirst';
+  if (newFirst) {
+    if (fresh.length) return { w: fresh[0], mode: 'new' };
+    if (due.length) return { w: due[0], mode: 'review' };
+  } else {
+    if (due.length) return { w: due[0], mode: 'review' };
+    if (fresh.length) return { w: fresh[0], mode: 'new' };
+  }
   if (s.retry.length) { const x = s.retry.shift(); return { w: BYID[x.id], mode: 'practice' }; }
   const due2 = dueList(); if (due2.length) return { w: due2[0], mode: 'review' };
   return null;
@@ -1402,6 +1409,8 @@ function renderSettings() {
   </div>
   <div class="card"><h3>🎯 规则</h3>
    <div class="set"><label>每日新词目标</label><div class="stepper" style="margin:0"><button data-act="goal" data-d="-1">−</button><b>${st.dailyNew}</b><button data-act="goal" data-d="1">＋</button></div></div>
+   <div class="set"><label for="studyOrder">学习顺序</label><select id="studyOrder"><option value="reviewFirst" ${st.studyOrder !== 'newFirst' ? 'selected' : ''}>先复习，再学新词</option><option value="newFirst" ${st.studyOrder === 'newFirst' ? 'selected' : ''}>先学新词，再复习</option></select></div>
+   <p class="muted">只调整复习与新学的先后顺序；错题即时练习仍会穿插进行。</p>
    <div class="set"><label>答错时</label><select id="pen" data-act="pen"><option value="down2" ${st.penalty === 'down2' ? 'selected' : ''}>后退 2 轮</option><option value="reset" ${st.penalty === 'reset' ? 'selected' : ''}>回到第 1 轮</option></select></div>
    <div class="set"><label for="asT">自动朗读</label><input type="checkbox" class="sw" id="asT" data-act="asTog" ${st.autoSpeak ? 'checked' : ''}></div>
    <div class="set"><label>朗读语速</label><select id="rate" data-act="rate">${[0.6, 0.75, 0.85, 1, 1.15].map(v => `<option value="${v}" ${+st.rate === v ? 'selected' : ''}>${v === 1 ? '正常' : v < 1 ? '慢 ' + v : '快 ' + v}</option>`).join('')}</select></div>
@@ -1414,6 +1423,7 @@ function renderSettings() {
   <div class="card"><h3>⚠️ 危险区</h3><button class="big gray" data-act="reset">🗑️ 重置全部进度</button></div>`;
   bindBackup();
   $('#pen').addEventListener('change', e => { S.settings.penalty = e.target.value; save(); });
+  $('#studyOrder').addEventListener('change', e => { S.settings.studyOrder = e.target.value; save(); toast('已保存学习顺序'); });
   $('#rate').addEventListener('change', e => { S.settings.rate = +e.target.value; save(); speak('Hello! Let us learn English.'); });
 }
 function toast(t) { const el = $('#toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', 2200); }
