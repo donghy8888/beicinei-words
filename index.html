@@ -1108,6 +1108,7 @@ let SES = null, CUR = null, TOKEN = 0;
 function startSession(sec) {
   if (sec) setPick([sec]);
   SES = { n: 0, ok: 0, bad: 0, xp: 0, coins: 0, combo: 0, killed: 0, learned: 0, retry: [], lastId: null };
+  window.dispatchEvent(new Event('vocab-study-start'));
   nextCard();
 }
 function pickNext() {
@@ -1195,6 +1196,7 @@ function chartHTML(sec) {
 }
 function renderHome() {
   SES = null; CUR = null; TOKEN++;
+  window.dispatchEvent(new Event('vocab-study-stop'));
   const due = dueList().length, nl = newList().length, t = today(), left = Math.min(newLeftToday(), nl);
   const pk = todayPick(), allNew = newList(ALL_IDS).length, sug = nl ? null : nextUnfinished(pk);
   const c = stageCounts(null), total = c.reduce((a, b) => a + b, 0);
@@ -1339,6 +1341,7 @@ function renderFeedback() {
   try { $('#nextbtn').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { }
 }
 function renderDone() {
+  window.dispatchEvent(new Event('vocab-study-stop'));
   const t = today(), nd = nextDueTime(), nl = newList().length, sug = nl ? null : nextUnfinished(todayPick());
   const acc = SES.ok + SES.bad ? Math.round(SES.ok / (SES.ok + SES.bad) * 100) : 0;
   app().innerHTML = header() + `<div class="card center"><div style="font-size:70px">🏆</div><h2>本轮闯关完成！</h2>
@@ -1763,7 +1766,7 @@ boot();
   </div>
   <h3 style="font-size:16px;margin-top:12px">近7天</h3><div id="studyTimerChart" class="st-chart"></div>
   <h3 style="font-size:16px;margin-top:12px">最近14天记录</h3><div id="studyTimerHistory"></div>
-  <div class="st-note">计时记录只保存在这台设备的当前浏览器中。切到后台或锁屏会自动暂停；开始学习后请在离开前暂停，避免把休息时间算进去。</div>
+  <div class="st-note">进入背单词闯关自动计时，完成闯关、返回主页、切换应用、锁屏或退出页面自动停止。记录仅保存在当前设备浏览器。</div>
 </section>
 <script id="study-timer-v1">
 (function(){
@@ -1807,6 +1810,8 @@ boot();
   $('studyTimerFab').addEventListener('click',()=>{const p=$('studyTimerPanel');p.style.display=p.style.display==='block'?'none':'block';render();});
   $('studyTimerClose').addEventListener('click',()=>{$('studyTimerPanel').style.display='none';});
   $('studyTimerToggle').addEventListener('click',()=>data.running?stop():start());
+  window.addEventListener('vocab-study-start',start);
+  window.addEventListener('vocab-study-stop',stop);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')stop();});
   window.addEventListener('pagehide',stop);
   setInterval(render,1000);
