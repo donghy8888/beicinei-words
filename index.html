@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261018-065706 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261018-101652 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -272,6 +272,53 @@ const Importer = (() => {
   const IPA = /[ˈˌəɪʊɜːæʌɒɔθðŋʃʒ:]/;
   const PHRE = /\/[^\/\s][^\/]*?\//g;
 
+  /* ---------- leading serial numbers: 「1. apple」「12、banana」「(4) x」「① x」「No.8 x」 ---------- */
+  // Only a number followed by a list delimiter (or wrapped in brackets / circled) is stripped, so real content such as
+  // 「100 percent」「24 hours」「5G」「1990s」「9.20 customer service」「3-D」「7-Eleven」「1,000 people」 stays intact.
+  // A bare 「12 apple」 is only stripped when most entries of the file carry sequential leading numbers (stripBareSeq).
+  const SD = '[0-9\uff10-\uff19]';
+  const SERIAL_RE = new RegExp('^(\\s*\\*?\\s*)(?:' + [
+    '(?:No|NO|no)[.\uff0e]\\s*' + SD + '{1,3}(?:\\s*[.\uff0e\u3001,\uff0c:\uff1a)\uff09](?!' + SD + '))?\\s*',  // No.8 / No. 8.
+    '[(\uff08]\\s*' + SD + '{1,3}\\s*[)\uff09](?:\\s*[.\uff0e\u3001,\uff0c:\uff1a](?!' + SD + '))?\\s*',      // (4) / （5）
+    SD + '{1,3}\\s*(?:[.\uff0e\u3001,\uff0c:\uff1a](?!' + SD + ')|[)\uff09])\\s*',                                // 1. 1.apple 12、 3) 6． 2，
+    SD + '{1,3}(?:\\s+-\\s*|\\s*-\\s+)',                                                                          // 7 - x  (not 3-D / 5-year-old)
+    '[\u2460-\u249b\u24ea\u2776-\u2793](?:\\s*[.\uff0e\u3001])?\\s*'                                          // ① ⑴ ⒈ ❶
+  ].join('|') + ')');
+  const BARE_RE = new RegExp('^(\\s*\\*?\\s*)(' + SD + '{1,3})\\s+(?=[A-Za-z0-9\uff10-\uff19\u3400-\u9fff*(\uff08\u2018\u201c"\'])');
+  const halfNum = d => +String(d).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+  const hasBody = t => /[A-Za-z\u3400-\u9fff]/.test(t);
+  let STRIPPED = 0;   // serials removed during the current parse (shown in the preview)
+  // strip a delimited serial from the first line of s
+  function stripSerial(s) {
+    s = String(s == null ? '' : s); const nl = s.indexOf('\n'), first = nl < 0 ? s : s.slice(0, nl), rest = nl < 0 ? '' : s.slice(nl);
+    const m = first.match(SERIAL_RE); if (!m) return s;
+    const body = first.slice(m[0].length); if (!hasBody(body)) return s;
+    STRIPPED++; return m[1].replace(/\s+/g, '') + body + rest;
+  }
+  const stripSerialLines = s => String(s == null ? '' : s).split('\n').map(stripSerial).join('\n');
+  // values = one column of a file (or its lines). If most of them start with a bare sequential number 「1 apple」「2 pear」,
+  // strip the numbers that continue the sequence (a value whose number breaks the sequence, e.g. 「100 percent」, is kept).
+  function stripBareSeq(values) {
+    const firstLine = v => String(v == null ? '' : v).split('\n')[0];
+    const ne = values.filter(v => String(v == null ? '' : v).trim());
+    const nums = ne.map(v => { const m = firstLine(v).match(BARE_RE); return m ? halfNum(m[2]) : null; });
+    const hit = nums.filter(n => n != null);
+    if (hit.length < 3 || hit.length < ne.length * 0.6) return values;
+    // the list starts at the first number followed by its successor; numbers may skip a little (missing rows)
+    const st = hit.findIndex((n, i) => hit[i + 1] === n + 1); if (st < 0) return values;
+    let expect = hit[st], chain = 0; for (let i = st; i < hit.length; i++) if (hit[i] >= expect && hit[i] <= expect + 3) { chain++; expect = hit[i] + 1; }
+    if (chain < 3 || chain < hit.length * 0.7) return values;
+    expect = hit[st];
+    return values.map(v => {
+      const str = String(v == null ? '' : v), f = firstLine(str), m = f.match(BARE_RE); if (!m) return v;
+      const n = halfNum(m[2]);
+      if (!(n >= expect && n <= expect + 3)) return v;
+      const body = f.slice(m[0].length); if (!hasBody(body)) return v;
+      expect = n + 1; STRIPPED++;
+      return m[1].replace(/\s+/g, '') + body + str.slice(f.length);
+    });
+  }
+
   /* ---------- UTF-8 ---------- */
   function utf8(a) {
     if (typeof TextDecoder !== 'undefined') try { return new TextDecoder('utf-8').decode(a); } catch (e) { }
@@ -520,10 +567,11 @@ const Importer = (() => {
   function paragraphsToEntries(paras) {
     const nonempty = paras.map(p => p.replace(/\u00a0/g, ' ')).filter(p => p.trim());
     if (!nonempty.length) return { title: '', words: [], tips: [] };
-    const title = nonempty[0].trim();
+    const title = nonempty[0].trim();   // section titles keep their numbers
     const words = [], tips = [];
+    const body = stripBareSeq(nonempty.slice(1)).map(stripSerial);
     for (let i = 1; i < nonempty.length; i++) {
-      const line = nonempty[i];
+      const line = body[i - 1];
       const pair = splitEnZhLine(line);
       if (!pair || !pair.en || !pair.cn) {
         // long Chinese-only / English-only lines become tips rather than silent drops
@@ -648,6 +696,7 @@ const Importer = (() => {
     return e;
   }
   function makeEntries(no, cnRaw, posRaw, enRaw) {
+    cnRaw = stripSerialLines(cnRaw); enRaw = stripSerial(enRaw);
     const opt = no.includes('*') || cnRaw.trim().startsWith('*') || enRaw.trim().startsWith('*');
     const cn0 = cnRaw.trim().replace(/^\*+/, '').trim(), en0 = enRaw.replace(/^\s*\*+/, '');
     const cnLines = cn0.split('\n').map(s => s.trim()).filter(Boolean);
@@ -690,20 +739,22 @@ const Importer = (() => {
     return { no: f(H_NO), cn: f(H_CN), pos: f(H_POS), en: f(H_EN), len: c.length };
   }
   function rowsToEntries(rows) {
-    const words = [], tips = []; let sub = '', group = '', hm = null;
+    const words = [], tips = [], pend = []; let sub = '', group = '', hm = null;
     for (const c of rows) {
       if (!c.length || c.every(x => !x.trim())) continue;
       const first = c[0].trim();
       if (first === '序号' || (c.length >= 2 && c.some(x => /^(中文|chinese)$/i.test(x.trim())) && c.some(x => /^(英文|english)$/i.test(x.trim())))) { hm = headerMap(c); continue; }
       if (c.length === 1) { if (first.length < 20) { if (/^P\d+/.test(first)) sub = first; else group = first.replace(/^\*+/, ''); } else tips.push(first); continue; }
-      if (c.length === 2 && !(hm && hm.len === 2)) { if (words.length) words[words.length - 1].notes.push(c[1].trim()); else if (c[1].trim()) tips.push(c[1].trim()); continue; }
+      if (c.length === 2 && !(hm && hm.len === 2)) { if (pend.length) pend[pend.length - 1].extra.push(c[1].trim()); else if (c[1].trim()) tips.push(c[1].trim()); continue; }
       let no, cn, pos, en;
       if (hm && hm.len === c.length && hm.cn >= 0 && hm.en >= 0) { no = hm.no >= 0 ? c[hm.no] : ''; cn = c[hm.cn]; pos = hm.pos >= 0 ? c[hm.pos] : ''; en = c[hm.en]; }
       else if (c.length === 3) { [no, cn, en] = c; pos = ''; }
       else { [no, cn, pos] = c; en = c.slice(3).join('\n'); }
       if (!clean(cn) && !clean(en)) continue;
-      makeEntries(no || '', cn || '', pos || '', en || '').forEach(e => { e.sub = sub; e.group = group; words.push(classify(e)); });
+      pend.push({ no: no || '', cn: cn || '', pos: pos || '', en: en || '', sub, group, extra: [] });
     }
+    const cns = stripBareSeq(pend.map(x => x.cn)), ens = stripBareSeq(pend.map(x => x.en));
+    pend.forEach((x, i) => { makeEntries(x.no, cns[i], x.pos, ens[i]).forEach(e => { e.sub = x.sub; e.group = x.group; words.push(classify(e)); }); if (x.extra.length) words[words.length - 1].notes.push(...x.extra); });
     return { words, tips };
   }
   /* ---------- CSV / TXT ---------- */
@@ -724,9 +775,11 @@ const Importer = (() => {
     text = text.replace(/^\uFEFF/, '');
     const delim = text.includes('\t') ? '\t' : ',';
     let rows = splitCSV(text, delim).map(r => r.map(x => x.replace(/\u3000|\u00a0/g, ' '))).filter(r => r.some(x => x.trim()));
-    const words = []; let hm = null;
+    const words = [], pend = []; let hm = null;
     if (rows.length) { const h = headerMap(rows[0]); if ((h.cn >= 0 && h.en >= 0) || h.no >= 0 || h.pos >= 0) { hm = h; rows = rows.slice(1); } }
-    for (const r of rows) {
+    const oneCell = stripBareSeq(rows.map(r => r.length === 1 ? r[0] : ''));
+    for (let ri = 0; ri < rows.length; ri++) {
+      const r = rows[ri];
       let no = '', cn = '', pos = '', en = '';
       if (hm && hm.cn >= 0 && hm.en >= 0) { no = hm.no >= 0 ? r[hm.no] || '' : ''; cn = r[hm.cn] || ''; pos = hm.pos >= 0 ? r[hm.pos] || '' : ''; en = r[hm.en] || ''; }
       else if (r.length >= 4) [no, cn, pos, en] = r;
@@ -734,14 +787,16 @@ const Importer = (() => {
       else if (r.length === 2) { if (CJK.test(r[0]) && !CJK.test(r[1])) [cn, en] = r; else [en, cn] = r; }
       else {
         // one cell: "english  中文" / "中文 english" / "english，中文" (full-width comma typed with a Chinese keyboard)
-        const p = splitEnZhLine(r[0].replace(/\s*，\s*/, '\t'));
+        const p = splitEnZhLine(stripSerial(oneCell[ri]).replace(/\s*，\s*/, '\t'));
         if (!p) continue; en = p.en; cn = p.cn;
       }
       if (clean(cn) && clean(en) && !CJK.test(cn) && CJK.test(en) && !/[A-Za-z]/.test(en)) [cn, en] = [en, cn];   // columns swapped
       if (/^\s*\*/.test(en) && !no.includes('*')) no = '*' + no;
       if (!clean(cn) || !clean(en)) continue;
-      makeEntries(no, cn, pos, en).forEach(e => words.push(classify(e)));
+      pend.push({ no, cn, pos, en });
     }
+    const cns = stripBareSeq(pend.map(x => x.cn)), ens = stripBareSeq(pend.map(x => x.en));
+    pend.forEach((x, i) => makeEntries(x.no, cns[i], x.pos, ens[i]).forEach(e => words.push(classify(e))));
     const t = parseTitle(fileName.replace(/\.(csv|txt)$/i, ''), fileName);
     return [{ ...t, words, tips: [] }];
   }
@@ -753,7 +808,8 @@ const Importer = (() => {
     ['phonetic', 'opp', 'oppCn', 'pl', 'sub', 'group'].forEach(k => e[k] = e[k] ? String(e[k]) : '');
     const fo = e.forms && typeof e.forms === 'object' && !Array.isArray(e.forms) ? e.forms : {};
     e.forms = {}; ['past', 'pp', 'ing'].forEach(k => { if (fo[k]) e.forms[k] = clean(fo[k]); });
-    e.alt = Array.isArray(e.alt) ? e.alt.map(String) : []; e.notes = Array.isArray(e.notes) ? e.notes.map(String) : [];
+    e.cn = clean(stripSerialLines(e.cn)); e.en = clean(stripSerial(e.en));
+    e.alt = Array.isArray(e.alt) ? e.alt.map(a => clean(stripSerial(String(a)))) : []; e.notes = Array.isArray(e.notes) ? e.notes.map(String) : [];
     if (!['word', 'phrase', 'sentence'].includes(e.type)) classify(e);
     return e;
   }
@@ -764,7 +820,9 @@ const Importer = (() => {
     if (!arr) throw new Error('JSON 里没有找到 words 列表');
     const secs = {}; (Array.isArray(o.sections) ? o.sections : []).forEach(s => { if (s && s.id) secs[s.id] = s; });
     const groups = new Map();
-    arr.forEach(w => { if (!w || !w.en || !w.cn) return; const k = w.section || '_'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(cleanWord(w)); });
+    const vals = arr.filter(w => w && w.en && w.cn), bEn = stripBareSeq(vals.map(w => String(w.en))), bCn = stripBareSeq(vals.map(w => String(w.cn)));
+    vals.forEach((w, i) => { if (bEn[i] !== String(w.en) || bCn[i] !== String(w.cn)) vals[i] = Object.assign({}, w, { en: bEn[i], cn: bCn[i] }); });
+    vals.forEach(w => { if (!w || !w.en || !w.cn) return; const k = w.section || '_'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(cleanWord(w)); });
     const out = [];
     groups.forEach((ws, k) => {
       const s = secs[k];
@@ -799,7 +857,7 @@ const Importer = (() => {
   }
   async function parseFile(file, opts) {
     const name = file.name || 'file';
-    const ab = await readAB(file); const b = new Uint8Array(ab);
+    const ab = await readAB(file); const b = new Uint8Array(ab); STRIPPED = 0;
     const ext = (name.match(/\.([a-z0-9]+)$/i) || [])[1] || '';
     let items;
     if (/^docx$/i.test(ext) || (b[0] === 0x50 && b[1] === 0x4b)) {
@@ -809,10 +867,10 @@ const Importer = (() => {
     else if (/^(csv|txt|tsv)$/i.test(ext)) items = parseDelimited(decodeText(b), name);
     else if (/^doc$/i.test(ext)) throw new Error('不支持旧版 .doc，请在 Word 里另存为 .docx');
     else throw new Error('不支持的文件类型：' + (ext || '未知'));
-    items.forEach(it => { it.fileName = name; it.words = it.words.filter(w => w.en && w.cn); });
+    items.forEach(it => { it.fileName = name; it.words = it.words.filter(w => w.en && w.cn); it.serials = STRIPPED; });
     return items;
   }
-  return { decodeText, parseFile, parseDocxBuffer, parseDelimited, parseJSON, parseTitle, rowsToEntries, makeEntries, inflateRaw, unzipText, docxXmlToRows, docxXmlToDoc, paragraphsToEntries, splitEnZhLine, stats, clean };
+  return { decodeText, parseFile, parseDocxBuffer, parseDelimited, parseJSON, parseTitle, rowsToEntries, makeEntries, inflateRaw, unzipText, docxXmlToRows, docxXmlToDoc, paragraphsToEntries, splitEnZhLine, stats, clean, stripSerial, stripSerialLines, stripBareSeq };
 })();
 
 'use strict';
@@ -866,7 +924,7 @@ const Sched = {
 /* ================= state ================= */
 function defaultState() {
   const sec = {}; SECTIONS.forEach(s => sec[s.id] = true);
-  return { v: 1, words: {}, xp: 0, coins: 0, bestCombo: 0, totalRight: 0, totalWrong: 0, killed: 0, days: {},
+  return { v: 1, serialClean: 1, words: {}, xp: 0, coins: 0, bestCombo: 0, totalRight: 0, totalWrong: 0, killed: 0, days: {},
     avatar: '🧑‍🎓', owned: ['🧑‍🎓'], pick: null, lastPick: null, custom: emptyCustom(), lastBackup: 0,
     studyTime: {}, studyFlags: {}, studyArchive: 0,
     settings: { dailyNew: 15, sections: sec, optional: true, penalty: 'down2', autoSpeak: true, rate: 0.85, theme: initialTheme() }, created: clock() };
@@ -909,7 +967,44 @@ function sanitizeCustom(c) {
   return out;
 }
 const DAYKEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+// one-off: strip leading serial numbers (「1. apple」「①苹果」…) from words imported by older versions, keeping progress.
+// Custom word ids are hash(section + en + cn), so a changed word gets the id a fresh import would give it and its
+// progress moves along; if that id already exists (「1. apple」 and 「apple」 both imported) the two merge, keeping the
+// record with the higher stage. Idempotent: clean data is left untouched.
+function cleanCustomSerials(s) {
+  const c = s.custom, byId = new Map(c.words.map(w => [w.id, w])), drop = new Set(); let n = 0;
+  const better = (a, b) => !a ? b : !b ? a : ((+b.s || 0) > (+a.s || 0) ? b : a);
+  c.sections.forEach(sec => {
+    const ws = c.words.filter(w => w.section === sec.id); if (!ws.length) return;
+    const ens = Importer.stripBareSeq(ws.map(w => w.en)), cns = Importer.stripBareSeq(ws.map(w => w.cn));
+    ws.forEach((w, i) => {
+      const en0 = Importer.stripSerial(ens[i]), cn0 = Importer.stripSerialLines(cns[i]);
+      const alt = (w.alt || []).map(a => { const t = Importer.stripSerial(a); return t === a ? a : Importer.clean(t); });
+      const altChanged = alt.some((a, k) => a !== w.alt[k]);
+      if (en0 === w.en && cn0 === w.cn && !altChanged) return;
+      n++; w.alt = [...new Set(alt.filter(a => a && a.toLowerCase() !== Importer.clean(en0).toLowerCase()))];
+      if (en0 === w.en && cn0 === w.cn) return;
+      const en = Importer.clean(en0), cn = /[\u3400-\u9fff]/.test(cn0) && !/[A-Za-z]/.test(cn0) ? cn0.replace(/\s+/g, '') : Importer.clean(cn0);
+      w.en = en; w.cn = cn;
+      if (!['sentence'].includes(w.type)) w.type = en.split(' ').length === 1 ? 'word' : 'phrase';
+      const nid = sec.id + '-' + hash(en.toLowerCase() + '|' + cn).toString(36);
+      if (nid === w.id) return;
+      const other = byId.get(nid);
+      if (other && other !== w && !drop.has(other)) {   // duplicate of an existing word: merge progress into it
+        const keep = better(s.words[nid], s.words[w.id]); if (keep) s.words[nid] = keep; delete s.words[w.id];
+        other.alt = [...new Set((other.alt || []).concat(w.alt))].filter(a => a.toLowerCase() !== String(other.en).toLowerCase());
+        drop.add(w); return;
+      }
+      if (s.words[w.id]) { s.words[nid] = s.words[w.id]; delete s.words[w.id]; }
+      byId.delete(w.id); w.id = nid; byId.set(nid, w);
+    });
+  });
+  if (drop.size) c.words = c.words.filter(w => !drop.has(w));
+  return n;
+}
+let SERIAL_FIXED = 0;
 function migrate(s) {
+  const needSerial = s.serialClean !== 1;
   const d = defaultState();
   if (!isObj(s.settings)) s.settings = {};
   const defSecs = d.settings.sections, oldSecs = isObj(s.settings.sections) ? s.settings.sections : {};
@@ -934,6 +1029,8 @@ function migrate(s) {
   for (const k in s.studyTime) { const n = +s.studyTime[k]; if (!DAYKEY_RE.test(k) || !isFinite(n) || n <= 0) delete s.studyTime[k]; else s.studyTime[k] = Math.floor(n); }
   // v3: custom imported sections live inside the state (so export/import carries them)
   s.custom = sanitizeCustom(s.custom);
+  if (needSerial) SERIAL_FIXED += cleanCustomSerials(s);
+  s.serialClean = 1;
   rebuildData(s.custom);
   // v1 -> v2: the old 设置 section filter becomes the default "today" pick
   if (!Array.isArray(s.lastPick)) s.lastPick = null;
@@ -1914,7 +2011,7 @@ function renderImportPreview() {
     const rows = ws.slice(0, 10).map(w => `<tr><td>${w.optional ? '<span class="tag xopt">*</span>' : ''}${esc(w.en)}</td><td>${esc(w.cn)} <span class="muted">${esc(w.pos)}</span></td></tr>`).join('');
     return `<div class="card"><div class="muted">📄 ${esc(it.fileName)}${it.title ? ' · 标题：' + esc(it.title) : ''}</div>
       <label class="muted">关卡名称（可修改）</label><input class="nm" data-pv="${i}" value="${esc(it.name)}">
-      ${it.note ? `<div class="warn">ℹ️ ${esc(it.note)}</div>` : ''}
+      ${it.note ? `<div class="warn">ℹ️ ${esc(it.note)}</div>` : ''}${it.serials ? `<div class="muted">🧹 已自动去掉 ${it.serials} 个开头序号（如「1.」「①」），下面显示的是去掉后的样子</div>` : ''}
       ${bc ? `<div class="err">⚠️ 和内置关卡「${esc(bc.name)}」同名，请改个名字，否则不会导入</div>` : ''}
       ${ex ? `<div class="warn">🔁 已经有同名的导入关卡（${WORDS.filter(w => w.section === ex.id).length} 条，已学 ${exLearned}）。<br><select data-pvmode="${i}">
          <option value="replace" ${it.mode === 'replace' ? 'selected' : ''}>替换（相同的词保留学习进度）</option>
@@ -1986,6 +2083,7 @@ function renderBackup() {
 }
 function boot() {
   rebuildData(S.custom);
+  if (SERIAL_FIXED && !LOAD_ERR) save();   // persist the one-off serial-number cleanup (and its flag) right away
   applyTheme();
   renderHome();
   showBanner();
