@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261018-101652 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261019-192602 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -51,6 +51,8 @@ h3{margin:12px 0 6px;font-size:17px;color:#3a1c71}
 .bar .grow{flex:1}
 .combo{font-weight:800;color:#ffd43b;text-shadow:0 2px 0 #b35c00;font-size:20px;min-height:26px;text-align:right}
 .combo.pulse{animation:pop .4s}
+.battlehead{position:sticky;top:0;z-index:6;padding:0 0 4px;background:linear-gradient(180deg,#2b1055 0%,#3a1c71 70%,#3a1c71 100%)}
+html:not([data-theme=classic]) .battlehead{background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 100%);background-color:var(--bg2)}
 .arena{position:relative;text-align:center;color:#fff;padding:6px 0 0}
 .monster{font-size:84px;line-height:1.1;display:inline-block;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35));animation:bob 2.4s ease-in-out infinite}
 .monster.hit{animation:shake .45s}
@@ -918,7 +920,8 @@ const Sched = {
     }
     return r;
   },
-  hp(r) { if (!r || !r.s) return STAGES; if (r.s >= MASTERED) return 0; return STAGES - r.s + 1; }
+  // Hearts left until 掌握. New=8; each advance (learn quiz → s=1, or a correct review) knocks 1 off: s=1→7 … s=7→1, s=8→0 (final review), mastered→0.
+  hp(r) { if (!r || !r.s) return STAGES; if (r.s >= MASTERED) return 0; return Math.max(0, STAGES - r.s); }
 };
 
 /* ================= state ================= */
@@ -1738,7 +1741,7 @@ function extrasHTML(w) {
 }
 function renderLearn() {
   const w = CUR.w, long = w.en.length > 28;
-  app().innerHTML = barHTML() + monsterHTML(w, 'new') + `<div class="card learn"><div class="qtype">🆕 新怪物出现！先认识它</div>
+  app().innerHTML = `<div class="battlehead">${barHTML()}${monsterHTML(w, 'new')}</div>` + `<div class="card learn"><div class="qtype">🆕 新怪物出现！先认识它</div>
    <div class="cn">${esc(w.cn)}</div>${tagsHTML(w)}
    <div class="en ${long ? 'long' : ''}">${esc(w.en)}</div>
    ${w.phonetic ? `<div class="ph">${esc(w.phonetic)}</div>` : ''}
@@ -1771,7 +1774,7 @@ function renderQ() {
      <div class="center heard" id="heard"></div>
      <div class="row"><button class="btn2" data-act="speakCheck">✅ 判定</button><button class="btn2" data-act="giveup">🤔 不会</button></div>`;
   const opts = q.opts ? `<div class="opts">${q.opts.map((o, i) => `<button class="opt" data-act="opt" data-i="${i}">${esc(o)}</button>`).join('')}</div>` : '';
-  app().innerHTML = barHTML() + monsterHTML(w, q.mode === 'bonus' ? 'bonus' : q.mode) + `<div class="card">${body}${opts}<div id="fb" aria-live="polite"></div></div>`;
+  app().innerHTML = `<div class="battlehead">${barHTML()}${monsterHTML(w, q.mode === 'bonus' ? 'bonus' : q.mode)}</div>` + `<div class="card">${body}${opts}<div id="fb" aria-live="polite"></div></div>`;
   if (q.qtype === 'order') renderOrder();
   if (q.qtype === 'spell') { const el = $('#sp'); el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) ACT.check(); }); setTimeout(() => { try { el.focus(); } catch (e) { } }, 50); }
   if (q.qtype === 'listen' || (q.qtype === 'en2cn' && S.settings.autoSpeak)) speak(w.en);
@@ -1796,27 +1799,33 @@ function renderFeedback() {
   stopRecog();
   document.querySelectorAll('[data-act=hint],[data-act=giveup],[data-act=check],[data-act=ordcheck],[data-act=ordclear],[data-act=mic],[data-act=speakCheck]').forEach(b => b.style.display = 'none');
   const mon = $('#mon');
-  if (res.ok) { if (mon) { mon.classList.remove('hit'); void mon.offsetWidth; mon.classList.add(res.killed ? 'dead' : 'hit'); } fx(q.mode === 'bonus' ? '+💰5' : q.mode === 'practice' ? '💪' : '-1 💥'); }
-  const hpEl = $('#hp'); if (hpEl && q.mode !== 'bonus') { const hp = Sched.hp(S.words[w.id]); hpEl.textContent = '❤️'.repeat(hp) + '🖤'.repeat(STAGES - hp); }
-  const cb = $('#combo'); if (cb) { cb.textContent = SES.combo >= 2 ? `🔥 连击 ${SES.combo}${comboMult(SES.combo) > 1 ? ' ×' + comboMult(SES.combo) : ''}` : ''; cb.classList.remove('pulse'); void cb.offsetWidth; cb.classList.add('pulse'); }
   const r = S.words[w.id];
+  const hpNow = Sched.hp(r);
+  if (res.ok) { if (mon) { mon.classList.remove('hit'); void mon.offsetWidth; mon.classList.add(res.killed ? 'dead' : 'hit'); } fx(q.mode === 'bonus' ? '+💰5' : q.mode === 'practice' ? '💪' : '-1 💥'); }
+  const hpEl = $('#hp'); if (hpEl && q.mode !== 'bonus') hpEl.textContent = '❤️'.repeat(hpNow) + '🖤'.repeat(STAGES - hpNow);
+  const stEl = document.querySelector('.arena .stage');
+  if (stEl && q.mode !== 'bonus' && q.mode !== 'practice') {
+    stEl.textContent = !r || !r.s ? '新怪物 · 学会后 5 分钟复习' : r.s >= MASTERED ? '已掌握' : `第 ${r.s} 轮复习（间隔 ${STAGE_LABELS[r.s - 1]}）`;
+  }
+  const cb = $('#combo'); if (cb) { cb.textContent = SES.combo >= 2 ? `🔥 连击 ${SES.combo}${comboMult(SES.combo) > 1 ? ' ×' + comboMult(SES.combo) : ''}` : ''; cb.classList.remove('pulse'); void cb.offsetWidth; cb.classList.add('pulse'); }
   let msg = res.ok ? rnd(MSG_OK) : rnd(MSG_BAD);
   if (res.killed) msg = '💥 怪物被彻底击败！这个词你已经牢牢掌握！⭐';
   if (q.mode === 'bonus') msg = res.ok ? '⭐ 奖励关通过！' : '这次没拿到奖励，记住它吧～';
   const next = q.mode === 'bonus' ? '' : q.mode === 'practice' ? '' : r && r.s <= STAGES ? `<div class="muted">下次复习：${fmtDur(r.due - clock())}（第 ${r.s} 轮）</div>` : '';
+  const hpLine = res.ok && q.mode !== 'bonus' && q.mode !== 'practice' ? `<div class="muted">❤️ 剩余 ${hpNow}/${STAGES}${res.killed ? ' · 已击败' : ''}</div>` : '';
   const ansTxt = q.mode === 'bonus' ? `${esc(w.en)} → ${esc(q.bonus.a)}` : esc(w.en);
   const heardLine = q.qtype === 'speak' && q._heard ? `<div class="muted">识别到：「${esc(q._heard)}」</div>` : '';
   const gain = res.xp || res.coins ? `<div>+${res.xp} XP ${res.coins ? ' · 💰+' + res.coins : ''}${SES.combo >= 3 && res.ok && q.mode !== 'bonus' ? ' · 连击加成 ×' + comboMult(SES.combo) : ''}</div>` : '';
   $('#fb').innerHTML = `<div class="fb ${res.ok ? 'ok' : 'bad'}"><div class="msg">${res.ok ? '✅ ' : '❌ '}${msg}</div>
     ${heardLine}<div class="ans">${ansTxt} <button class="speak sm" aria-label="朗读" data-act="say">🔊</button></div><div>${esc(w.cn)} ${w.pos ? '<span class="tag">' + esc(w.pos) + '</span>' : ''}${w.phonetic ? ' <span class="muted">' + esc(w.phonetic) + '</span>' : ''}</div>
-    ${q.mode === 'bonus' || res.ok ? '' : extrasHTML(w)}${gain}${next}
+    ${q.mode === 'bonus' || res.ok ? '' : extrasHTML(w)}${gain}${hpLine}${next}
     ${!res.ok && q.mode !== 'bonus' ? '<div class="muted">它会在几题后再次出现，加油！</div>' : ''}</div>
     <button class="big ${q.pendingBonus ? 'blue' : 'green'}" data-act="next" id="nextbtn">${q.pendingBonus ? '⭐ 进入奖励关！' : '继续 ➜'}</button>`;
   if (!res.ok || q.qtype === 'listen' || q.qtype === 'cn2en' || q.qtype === 'spell' || q.qtype === 'order' || q.qtype === 'speak') { if (S.settings.autoSpeak || q.qtype === 'speak') speak(w.en); }
   if (res.killed) confetti(24);
   if (res.levelUp) setTimeout(() => showOverlay('🎉', `升级啦！Lv.${res.levelUp}`, `你现在是「${titleOf(res.levelUp)}」！继续打怪吧！`), 500);
   else if (res.checkedIn) setTimeout(() => { toast(`✅ 今日打卡成功！已连续 ${streak()} 天`); confetti(10); }, 300);
-  try { $('#nextbtn').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { }
+  try { const fb = $('#fb'); if (fb) fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { }
 }
 function renderDone() {
   const t = today(), nd = nextDueTime(), nl = newList().length, sug = nl ? null : nextUnfinished(todayPick());
