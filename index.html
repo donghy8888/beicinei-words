@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261019-203401 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261019-204913 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -898,7 +898,7 @@ rebuildData(null);
 const MIN = 60e3, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const INTERVALS = [5 * MIN, 30 * MIN, 12 * HOUR, DAY, 2 * DAY, 4 * DAY, 7 * DAY, 15 * DAY];
 const STAGE_LABELS = ['5分钟', '30分钟', '12小时', '1天', '2天', '4天', '7天', '15天'];
-const STAGES = 8, MASTERED = 9;
+const STAGES = 8, MASTERED = 9, MAXHP = STAGES + 1;   // 9 hits to defeat: learn quiz + 8 Ebbinghaus reviews
 const KEY = 'vocab8a_ebbinghaus_v1';
 let clock = () => Date.now();
 
@@ -920,8 +920,11 @@ const Sched = {
     }
     return r;
   },
-  // Hearts left until 掌握. New=8; each advance (learn quiz → s=1, or a correct review) knocks 1 off: s=1→7 … s=7→1, s=8→0 (final review), mastered→0.
-  hp(r) { if (!r || !r.s) return STAGES; if (r.s >= MASTERED) return 0; return Math.max(0, STAGES - r.s); }
+  // Hearts left. Every correct answer on a monster card knocks off exactly one: new monster 9 → learn quiz → 8 (s=1) → … → s=8 → 1
+  // → final review → 0 (掌握). r.nl = a new word that was answered wrong (learned, but the hit hasn't landed yet: still 9).
+  hp(r) { if (!r || !r.s) return MAXHP; if (r.s >= MASTERED) return 0; return r.nl ? MAXHP : MAXHP - r.s; },
+  // retry of a word missed earlier in this session (relearning step): a correct answer advances one stage from where it dropped
+  relearn(r, now) { r.last = now; r.right = (r.right || 0) + 1; if (r.nl) { delete r.nl; r.due = now + INTERVALS[0]; return r; } return this.review(r, true, now); }
 };
 
 /* ================= state ================= */
@@ -1652,10 +1655,10 @@ function pickNext() {
   // reviews this session may serve: the whole plan, or (new-word session) only early re-checks of words learned in it
   const revs = () => s.kind === 'new' ? dueList().filter(w => s.newIds.has(w.id)) : todayDue();
   const due = revs().filter(w => w.id !== s.lastId);
-  if (due.length) return { w: due[0], mode: 'review' };
+  if (due.length) { s.retry = s.retry.filter(x => x.id !== due[0].id); return { w: due[0], mode: 'review' }; }
   if (s.kind !== 'review' && newLeftToday() > 0) { const nl = newList().filter(w => w.id !== s.lastId); if (nl.length) return { w: nl[0], mode: 'new' }; }
   if (s.retry.length) { const x = s.retry.shift(); return { w: BYID[x.id], mode: 'practice' }; }
-  const due2 = revs(); if (due2.length) return { w: due2[0], mode: 'review' };
+  const due2 = revs(); if (due2.length) { s.retry = s.retry.filter(x => x.id !== due2[0].id); return { w: due2[0], mode: 'review' }; }
   return null;
 }
 function nextCard() {
@@ -1683,19 +1686,21 @@ function submit(ok, extra) {
   if (!CUR || CUR.answered) return; CUR.answered = true; extra = extra || {};
   Study.touch();
   const w = CUR.w, now = clock(), mode = CUR.mode, t = today();
-  const r = S.words[w.id] || (S.words[w.id] = { s: 0 });
+  const r = S.words[w.id] || (S.words[w.id] = { s: 0 }), s0 = r.s;
   const before = levelInfo(S.xp).lv; let killed = false, xp = 0, coins = 0;
   if (mode === 'bonus') {
     if (ok) { xp = 15; coins = 5; }
   } else {
     t.a++; if (ok) t.ok++;
-    if (mode === 'new') { Sched.learn(r, now); t.n++; SES.learned++; if (SES.newIds) SES.newIds.add(w.id); coins += 3; }
-    else if (mode === 'review') { Sched.review(r, ok, now, S.settings.penalty); t.r++; if (r.s === MASTERED) { killed = true; S.killed++; SES.killed++; coins += 10; } }
+    if (mode === 'new') { Sched.learn(r, now); if (!ok) r.nl = 1; t.n++; SES.learned++; if (SES.newIds) SES.newIds.add(w.id); coins += 3; }
+    else if (mode === 'review') { Sched.review(r, ok, now, S.settings.penalty); delete r.nl; t.r++; }
+    else if (mode === 'practice' && ok && r.s >= 1 && r.s <= STAGES) Sched.relearn(r, now);   // retry: correct = one relearning step
+    if (ok && (mode === 'review' || mode === 'practice') && r.s === MASTERED && s0 <= STAGES) { killed = true; S.killed++; SES.killed++; coins += 10; }
     r.lt = CUR.qtype;
     if (ok) {
       SES.combo++; SES.ok++; S.totalRight++; S.bestCombo = Math.max(S.bestCombo, SES.combo);
       let base = (CUR.qtype === 'spell' || CUR.qtype === 'order' || CUR.qtype === 'speak') ? 15 : 10; if (extra.hint) base = Math.round(base / 2);
-      xp = Math.round(base * comboMult(SES.combo) * (mode === 'practice' ? 0.5 : 1));
+      xp = Math.round(base * comboMult(SES.combo));
       coins += (CUR.qtype === 'spell' || CUR.qtype === 'speak') ? 2 : 1;
     } else {
       SES.combo = 0; SES.bad++; S.totalWrong++;
@@ -1783,10 +1788,11 @@ function pickerHTML(pk) {
    <div class="pkg">${chip('all', '<span>🌈</span>全部', `剩 ${newList(ALL_IDS).length} 新`, all)}${h}</div></div>`;
 }
 function monsterHTML(w, mode) {
+  if (mode === 'bonus') return `<div class="arena bonus"><div class="monster" id="mon">🎁</div><div class="stage">⭐ 奖励题 · 不打怪，答对得 💰5 + 15XP</div></div>`;
   const r = S.words[w.id], hp = Sched.hp(r);
-  const stageTxt = !r || !r.s ? '新怪物 · 学会后 5 分钟复习' : r.s >= MASTERED ? '已掌握' : `第 ${r.s} 轮复习（间隔 ${STAGE_LABELS[r.s - 1]}）`;
+  const stageTxt = !r || !r.s || r.nl ? '新怪物 · 学会后 5 分钟复习' : r.s >= MASTERED ? '已掌握' : `第 ${r.s} 轮复习（间隔 ${STAGE_LABELS[r.s - 1]}）`;
   return `<div class="arena"><div class="monster" id="mon">${mode === 'bonus' ? '🎁' : monsterOf(w)}</div>
-   <div class="hp" id="hp">${mode === 'bonus' ? '⭐ 奖励关' : '❤️'.repeat(hp) + '🖤'.repeat(STAGES - hp)}</div><div class="stage">${mode === 'practice' ? '🔁 再战练习（不改变复习进度）' : mode === 'bonus' ? '答对得 💰5 + 15XP' : stageTxt}</div></div>`;
+   <div class="hp" id="hp" aria-label="怪物血量 ${hp}/${MAXHP}">${'❤️'.repeat(hp) + '🖤'.repeat(MAXHP - hp)}</div><div class="stage">${mode === 'practice' ? '🔁 再战！答对就打掉一颗心' : stageTxt}</div></div>`;
 }
 function barHTML() {
   return `<div class="bar"><button class="x" aria-label="返回" data-act="home">✖</button><div class="grow">${SES.kind === 'review' ? '🔁' : SES.kind === 'new' ? '✨' : ''} ✔ ${SES.ok} &nbsp; ✘ ${SES.bad} &nbsp; 📌 ${todayPick().length === ALL_IDS.length ? '全部' : todayPick().map(bossOf).join('')}</div>
@@ -1865,18 +1871,18 @@ function renderFeedback() {
   const mon = $('#mon');
   const r = S.words[w.id];
   const hpNow = Sched.hp(r);
-  if (res.ok) { if (mon) { mon.classList.remove('hit'); void mon.offsetWidth; mon.classList.add(res.killed ? 'dead' : 'hit'); } fx(q.mode === 'bonus' ? '+💰5' : q.mode === 'practice' ? '💪' : '-1 💥'); }
-  const hpEl = $('#hp'); if (hpEl && q.mode !== 'bonus') hpEl.textContent = '❤️'.repeat(hpNow) + '🖤'.repeat(STAGES - hpNow);
+  if (res.ok) { if (mon) { mon.classList.remove('hit'); void mon.offsetWidth; mon.classList.add(res.killed ? 'dead' : 'hit'); } fx(q.mode === 'bonus' ? '+💰5' : '-1 💥'); }
+  const hpEl = $('#hp'); if (hpEl && q.mode !== 'bonus') { hpEl.textContent = '❤️'.repeat(hpNow) + '🖤'.repeat(MAXHP - hpNow); hpEl.setAttribute('aria-label', `怪物血量 ${hpNow}/${MAXHP}`); }
   const stEl = document.querySelector('.arena .stage');
-  if (stEl && q.mode !== 'bonus' && q.mode !== 'practice') {
-    stEl.textContent = !r || !r.s ? '新怪物 · 学会后 5 分钟复习' : r.s >= MASTERED ? '已掌握' : `第 ${r.s} 轮复习（间隔 ${STAGE_LABELS[r.s - 1]}）`;
+  if (stEl && q.mode !== 'bonus') {
+    stEl.textContent = !r || !r.s || r.nl ? '新怪物 · 学会后 5 分钟复习' : r.s >= MASTERED ? '已掌握' : `第 ${r.s} 轮复习（间隔 ${STAGE_LABELS[r.s - 1]}）`;
   }
   const cb = $('#combo'); if (cb) { cb.textContent = SES.combo >= 2 ? `🔥 连击 ${SES.combo}${comboMult(SES.combo) > 1 ? ' ×' + comboMult(SES.combo) : ''}` : ''; cb.classList.remove('pulse'); void cb.offsetWidth; cb.classList.add('pulse'); }
   let msg = res.ok ? rnd(MSG_OK) : rnd(MSG_BAD);
   if (res.killed) msg = '💥 怪物被彻底击败！这个词你已经牢牢掌握！⭐';
   if (q.mode === 'bonus') msg = res.ok ? '⭐ 奖励关通过！' : '这次没拿到奖励，记住它吧～';
-  const next = q.mode === 'bonus' ? '' : q.mode === 'practice' ? '' : r && r.s <= STAGES ? `<div class="muted">下次复习：${fmtDur(r.due - clock())}（第 ${r.s} 轮）</div>` : '';
-  const hpLine = res.ok && q.mode !== 'bonus' && q.mode !== 'practice' ? `<div class="muted">❤️ 剩余 ${hpNow}/${STAGES}${res.killed ? ' · 已击败' : ''}</div>` : '';
+  const next = q.mode === 'bonus' ? '' : r && r.s <= STAGES ? `<div class="muted">下次复习：${fmtDur(r.due - clock())}（第 ${r.s} 轮）</div>` : '';
+  const hpLine = res.ok && q.mode !== 'bonus' ? `<div class="muted">❤️ 剩余 ${hpNow}/${MAXHP}${res.killed ? ' · 已击败' : ''}</div>` : '';
   const ansTxt = q.mode === 'bonus' ? `${esc(w.en)} → ${esc(q.bonus.a)}` : esc(w.en);
   const heardLine = q.qtype === 'speak' && q._heard ? `<div class="muted">识别到：「${esc(q._heard)}」</div>` : '';
   const gain = res.xp || res.coins ? `<div>+${res.xp} XP ${res.coins ? ' · 💰+' + res.coins : ''}${SES.combo >= 3 && res.ok && q.mode !== 'bonus' ? ' · 连击加成 ×' + comboMult(SES.combo) : ''}</div>` : '';
@@ -1886,7 +1892,7 @@ function renderFeedback() {
     ${!res.ok && q.mode !== 'bonus' ? '<div class="muted">它会在几题后再次出现，加油！</div>' : ''}</div>
     <button class="big ${q.pendingBonus ? 'blue' : 'green'}" data-act="next" id="nextbtn">${q.pendingBonus ? '⭐ 进入奖励关！' : '继续 ➜'}</button>`;
   if (!res.ok || q.qtype === 'listen' || q.qtype === 'cn2en' || q.qtype === 'spell' || q.qtype === 'order' || q.qtype === 'speak') { if (S.settings.autoSpeak || q.qtype === 'speak') speak(w.en); }
-  if (res.ok && (q.mode === 'review' || q.mode === 'new')) Sfx.play(res.killed ? 'kill' : 'hit', SES.combo);
+  if (res.ok && q.mode !== 'bonus') Sfx.play(res.killed ? 'kill' : 'hit', SES.combo);
   if (res.killed) confetti(24);
   if (res.levelUp) setTimeout(() => showOverlay('🎉', `升级啦！Lv.${res.levelUp}`, `你现在是「${titleOf(res.levelUp)}」！继续打怪吧！`), 500);
   else if (res.checkedIn) setTimeout(() => { toast(`✅ 今日打卡成功！已连续 ${streak()} 天`); confetti(10); }, 300);
