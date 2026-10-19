@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261019-192602 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261019-203401 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -930,7 +930,7 @@ function defaultState() {
   return { v: 1, serialClean: 1, words: {}, xp: 0, coins: 0, bestCombo: 0, totalRight: 0, totalWrong: 0, killed: 0, days: {},
     avatar: '🧑‍🎓', owned: ['🧑‍🎓'], pick: null, lastPick: null, custom: emptyCustom(), lastBackup: 0,
     studyTime: {}, studyFlags: {}, studyArchive: 0,
-    settings: { dailyNew: 15, sections: sec, optional: true, penalty: 'down2', autoSpeak: true, rate: 0.85, theme: initialTheme() }, created: clock() };
+    settings: { dailyNew: 15, sections: sec, optional: true, penalty: 'down2', autoSpeak: true, rate: 0.85, sfx: true, sfxVol: 0.6, theme: initialTheme() }, created: clock() };
 }
 /* ---- themes: 护眼 (eye, default) / 护眼夜间 (night) / 经典 (classic = original purple). prefers-color-scheme only seeds the first choice. */
 const THEMES = { eye: ['护眼', '#E6EDD9'], night: ['护眼夜间', '#1E1B16'], classic: ['经典', '#3a1c71'] };
@@ -1026,7 +1026,8 @@ function migrate(s) {
   st.dailyNew = Math.max(1, Math.min(100, Math.round(+st.dailyNew) || 15));
   st.rate = +st.rate >= 0.5 && +st.rate <= 1.5 ? +st.rate : 0.85;
   if (st.penalty !== 'reset') st.penalty = 'down2';
-  st.optional = st.optional !== false; st.autoSpeak = st.autoSpeak !== false;
+  st.optional = st.optional !== false; st.autoSpeak = st.autoSpeak !== false; st.sfx = st.sfx !== false;
+  st.sfxVol = isFinite(+st.sfxVol) && st.sfxVol !== null && st.sfxVol !== '' ? Math.max(0, Math.min(1, +st.sfxVol)) : 0.6;
   if (!THEMES[st.theme]) st.theme = initialTheme();
   delete st.lightMode; delete st.lightCap; delete st.normalCap;   // removed 「新单词表日」 feature: old saves just drop these
   for (const k in s.studyTime) { const n = +s.studyTime[k]; if (!DAYKEY_RE.test(k) || !isFinite(n) || n <= 0) delete s.studyTime[k]; else s.studyTime[k] = Math.floor(n); }
@@ -1407,6 +1408,69 @@ function speechSupported() {
 }
 const SPEECH_OK = speechSupported();
 let RECOG = null, RECOG_LISTEN = false;
+/* ---- 解压 sound effects: synthesized with Web Audio (offline, no files) ----
+   hit  = soft bubble-wrap pop: short filtered noise burst + pitched triangle "boop" (≈120 ms), pitch rises with combo (capped)
+   kill = pop + rising sparkle chime when the monster is defeated / mastered
+   iOS: the AudioContext is created/resumed inside the first user gesture (unlock). Never touches speechSynthesis. */
+const Sfx = {
+  ctx: null, noise: null, calls: [],
+  AC() { return window.AudioContext || window.webkitAudioContext || null; },
+  unlock() {
+    try {
+      const AC = this.AC(); if (!AC) return false;
+      if (!this.ctx) this.ctx = new AC();
+      if (this.ctx.state === 'suspended' && this.ctx.resume) { const p = this.ctx.resume(); if (p && p.catch) p.catch(() => { }); }
+      if (!this._primed) {   // a silent 1-sample buffer finishes the iOS unlock
+        const b = this.ctx.createBuffer(1, 1, 22050), src = this.ctx.createBufferSource(); src.buffer = b; src.connect(this.ctx.destination); src.start(0); this._primed = true;
+      }
+      return true;
+    } catch (e) { return false; }
+  },
+  vol() { return S.settings.sfx === false ? 0 : Math.max(0, Math.min(1, +S.settings.sfxVol)) * 0.5; },
+  ready() {
+    if (this.vol() <= 0 || RECOG_LISTEN) return null;   // toggle off, or mic is listening
+    if (!this.ctx && !this.unlock()) return null;
+    const c = this.ctx; if (!c || c.state === 'closed') return null;
+    if (c.state === 'suspended' && c.resume) { try { const p = c.resume(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
+    return c;
+  },
+  noiseBuf(c) {
+    if (this.noise && this.noise.sampleRate === c.sampleRate) return this.noise;
+    const n = Math.floor(c.sampleRate * 0.06), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    return (this.noise = b);
+  },
+  tone(c, out, t, type, f0, f1, dur, peak) {
+    const o = c.createOscillator(), g = c.createGain(); o.type = type;
+    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.7);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.02);
+  },
+  pop(c, out, t, pitch) {
+    const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = this.noiseBuf(c); bp.type = 'bandpass'; bp.frequency.value = 1800 * pitch; bp.Q.value = 1.2;
+    g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    src.connect(bp); bp.connect(g); g.connect(out); src.start(t); src.stop(t + 0.06);
+    this.tone(c, out, t + 0.005, 'triangle', 520 * pitch, 260 * pitch, 0.12, 0.6);   // squishy boop
+  },
+  play(kind, combo) {
+    this.calls.push({ kind, combo: combo || 0 });
+    const c = this.ready(); if (!c) return false;
+    try {
+      const out = c.createGain(); out.gain.value = this.vol(); out.connect(c.destination);
+      const t = c.currentTime + 0.01, pitch = Math.pow(2, Math.min(Math.max(0, (combo || 1) - 1), 8) / 12);   // +1 semitone per combo, cap +8
+      if (kind === 'kill') {
+        this.pop(c, out, t, 1);
+        [1047, 1319, 1568, 2093].forEach((f, i) => this.tone(c, out, t + 0.07 + i * 0.06, 'sine', f, f * 1.01, 0.28, 0.32));
+      } else if (kind === 'thud') {
+        this.tone(c, out, t, 'sine', 160, 110, 0.1, 0.25);
+      } else this.pop(c, out, t, pitch);
+      if (kind !== 'thud' && navigator.vibrate && !/iPhone|iPad|iPod/.test(navigator.userAgent || '')) { try { navigator.vibrate(kind === 'kill' ? [15, 40, 25] : 15); } catch (e) { } }
+      return true;
+    } catch (e) { return false; }
+  }
+};
+['pointerdown', 'touchend', 'keydown', 'click'].forEach(ev => document.addEventListener(ev, () => { if (!Sfx._primed) Sfx.unlock(); }, { passive: true, capture: true }));
 function stopRecog() {
   RECOG_LISTEN = false;
   try { if (RECOG) RECOG.stop(); } catch (e) { }
@@ -1822,6 +1886,7 @@ function renderFeedback() {
     ${!res.ok && q.mode !== 'bonus' ? '<div class="muted">它会在几题后再次出现，加油！</div>' : ''}</div>
     <button class="big ${q.pendingBonus ? 'blue' : 'green'}" data-act="next" id="nextbtn">${q.pendingBonus ? '⭐ 进入奖励关！' : '继续 ➜'}</button>`;
   if (!res.ok || q.qtype === 'listen' || q.qtype === 'cn2en' || q.qtype === 'spell' || q.qtype === 'order' || q.qtype === 'speak') { if (S.settings.autoSpeak || q.qtype === 'speak') speak(w.en); }
+  if (res.ok && (q.mode === 'review' || q.mode === 'new')) Sfx.play(res.killed ? 'kill' : 'hit', SES.combo);
   if (res.killed) confetti(24);
   if (res.levelUp) setTimeout(() => showOverlay('🎉', `升级啦！Lv.${res.levelUp}`, `你现在是「${titleOf(res.levelUp)}」！继续打怪吧！`), 500);
   else if (res.checkedIn) setTimeout(() => { toast(`✅ 今日打卡成功！已连续 ${streak()} 天`); confetti(10); }, 300);
@@ -1911,6 +1976,8 @@ function renderSettings() {
    <div class="set"><label>每日新词目标</label><div class="stepper" style="margin:0"><button data-act="goal" data-d="-1" aria-label="减少每日新词">−</button><b>${st.dailyNew}</b><button data-act="goal" data-d="1" aria-label="增加每日新词">＋</button></div></div>
    <div class="set"><label>答错时</label><select id="pen" data-act="pen"><option value="down2" ${st.penalty === 'down2' ? 'selected' : ''}>后退 2 轮</option><option value="reset" ${st.penalty === 'reset' ? 'selected' : ''}>回到第 1 轮</option></select></div>
    <div class="set"><label for="asT">自动朗读</label><input type="checkbox" class="sw" id="asT" data-act="asTog" ${st.autoSpeak ? 'checked' : ''}></div>
+   <div class="set"><label for="sfxT">🔊 音效（答对时的解压音）</label><input type="checkbox" class="sw" id="sfxT" data-act="sfxTog" ${st.sfx ? 'checked' : ''}></div>
+   <div class="set"><label for="sfxV">音效音量</label><input type="range" id="sfxV" min="0" max="100" step="5" value="${Math.round(st.sfxVol * 100)}" ${st.sfx ? '' : 'disabled'} aria-label="音效音量" style="flex:1;max-width:180px"></div>
    <div class="set"><label>朗读语速</label><select id="rate" data-act="rate">${[0.6, 0.75, 0.85, 1, 1.15].map(v => `<option value="${v}" ${+st.rate === v ? 'selected' : ''}>${v === 1 ? '正常' : v < 1 ? '慢 ' + v : '快 ' + v}</option>`).join('')}</select></div>
    <button class="btn2" style="width:100%" data-act="testvoice">🔊 试听发音${TTS ? '' : '（此浏览器不支持）'}</button>
    <p class="muted">复习间隔：${STAGE_LABELS.join(' → ')}，8 轮全部答对即掌握 ⭐</p></div>
@@ -1921,6 +1988,7 @@ function renderSettings() {
   <div class="card"><h3>⚠️ 危险区</h3><button class="big gray" data-act="reset">🗑️ 重置全部进度</button></div>`;
   bindBackup();
   $('#pen').addEventListener('change', e => { S.settings.penalty = e.target.value; save(); });
+  $('#sfxV').addEventListener('change', e => { S.settings.sfxVol = Math.max(0, Math.min(1, +e.target.value / 100)); save(); Sfx.unlock(); Sfx.play('hit', 1); });
   $('#rate').addEventListener('change', e => { S.settings.rate = +e.target.value; save(); speak('Hello! Let us learn English.'); });
 }
 function toast(t) { const el = $('#toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', 2200); }
@@ -2198,6 +2266,7 @@ const ACT = {
   pickadd: d => { const cur = pickedToday() ? todayPick() : []; if (!cur.includes(d.sec)) cur.push(d.sec); setPick(cur); toast('已加入今天的学习计划 📌'); renderLevel(d.sec); },
   optTog: (d, el) => { S.settings.optional = el.checked; save(); },
   asTog: (d, el) => { S.settings.autoSpeak = el.checked; save(); },
+  sfxTog: (d, el) => { S.settings.sfx = el.checked; save(); renderSettings(); if (el.checked) { Sfx.unlock(); Sfx.play('hit', 1); } },
   pen: () => { }, rate: () => { },
   testvoice: () => speak('Hello! Water is precious. Let us save water.'),
   export: () => { $('#io').value = exportText(); $('#io').select(); toast('进度代码已生成，复制保存好～'); },
@@ -2240,6 +2309,6 @@ document.addEventListener('visibilitychange', () => {
 window.VG = { WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
   Importer, rebuildData, importItems, deleteSection, handleWordFiles, get PREVIEW() { return PREVIEW; }, exportText, importText, storageCheck, secIdFor, BUILTIN_IDS,
   dueList, todayDue, newList, newLeftToday, todayPick, setPick, pickedToday, nextUnfinished, migrate, streak, levelInfo, checkSpell, checkSpeech, fuzzyNorm, levenshtein, phraseSimilarity, speechTargets, speechSupported, get SPEECH_OK() { return SPEECH_OK; }, variants, distractors, bonusList, bonusFakes, buildQ, chooseType, startSession, submit, nextCard, ACT, today, hintText, renderHome, stopRecog,
-  applyTheme, THEMES, Study, inSession, sanitizeCustom, get LOAD_ERR() { return LOAD_ERR; }, studyToday, studyWeek, studyTotal, studySec, last7Days, fmtStudy, fmtStudyShort, weekKey, pruneStudyTime, checkStudyMilestones, IDLE_MS };
+  applyTheme, THEMES, Sfx, Study, inSession, sanitizeCustom, get LOAD_ERR() { return LOAD_ERR; }, studyToday, studyWeek, studyTotal, studySec, last7Days, fmtStudy, fmtStudyShort, weekKey, pruneStudyTime, checkStudyMilestones, IDLE_MS };
 boot();
 </script></body></html>
