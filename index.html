@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261019-215134 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261019-220532 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -2314,6 +2314,8 @@ function backupCardHTML() {
    <p class="muted">备份里包含：学习进度、金币、打卡记录，以及导入的 ${S.custom.sections.length} 个自定义关卡。恢复会覆盖这台设备上的进度。</p>
   </div>`;
 }
+function lastBkText() { return S.lastBackup ? new Date(S.lastBackup).toLocaleString() : '从未备份'; }
+function markBackedUp() { S.lastBackup = clock(); save(); const el = $('#lastbk'); if (el) el.textContent = lastBkText(); }
 function bkMsg(t, bad) { const m = $('#bkmsg'); if (m) { m.textContent = t; m.className = 'bkmsg ' + (bad ? 'bad' : 'good'); } toast(t); }
 function fillCode() { const ta = $('#bkcode'); const v = exportRaw(); if (ta) ta.value = v; return v; }
 function bindBackup() {
@@ -2331,7 +2333,7 @@ function saveBackupFile() {
   let file = null; try { file = new File([txt], name, { type: 'application/json' }); } catch (e) { }
   // iPad/iPhone: a blob download silently lands in Downloads (or is blocked in in-app browsers) → use the share sheet
   if (file && navigator.share && navigator.canShare && (() => { try { return navigator.canShare({ files: [file] }); } catch (e) { return false; } })()) {
-    return navigator.share({ files: [file], title: name }).then(() => { S.lastBackup = clock(); save(); bkMsg('✅ 备份文件已保存/发送'); },
+    return navigator.share({ files: [file], title: name }).then(() => { markBackedUp(); bkMsg('✅ 备份文件已保存/发送'); },
       e => { if (e && e.name === 'AbortError') bkMsg('已取消。可以再点一次，或用「📋 复制备份码」', true); else { downloadBlob(txt, name); } });
   }
   return Promise.resolve(downloadBlob(txt, name));
@@ -2341,13 +2343,13 @@ function downloadBlob(txt, name) {
     const b = new Blob([txt], { type: 'application/json' }); const a = document.createElement('a');
     a.href = URL.createObjectURL(b); a.download = name; a.rel = 'noopener'; document.body.appendChild(a); a.click();
     setTimeout(() => { a.remove(); try { URL.revokeObjectURL(a.href); } catch (e) { } }, 60e3);
-    bkMsg('✅ 已开始下载「' + name + '」（iPad 在「文件 › 下载」里）。如果没看到，请用「📋 复制备份码」');
+    markBackedUp(); bkMsg('✅ 已开始下载「' + name + '」（iPad 在「文件 › 下载」里）。如果没看到，请用「📋 复制备份码」');
     return true;
   } catch (e) { bkMsg('❌ 保存文件失败，请用「📋 复制备份码」', true); return false; }
 }
 function copyBackupCode() {
   const ta = $('#bkcode'); const v = ta && ta.value ? ta.value : fillCode();
-  const ok = () => { S.lastBackup = clock(); save(); bkMsg('✅ 已复制，可以粘贴到备忘录或发给自己'); };
+  const ok = () => { markBackedUp(); bkMsg('✅ 已复制，可以粘贴到备忘录或发给自己'); };
   const fb = () => { if (copyFallback($('#bkcode'))) ok(); else { const t = $('#bkcode'); if (t) { try { t.scrollIntoView({ block: 'center' }); } catch (e) { } t.focus(); t.select(); } bkMsg('没能自动复制：备份码已选中，请长按 › 拷贝', true); } };
   try { if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(v).then(ok, fb); } catch (e) { }
   fb(); return Promise.resolve();
@@ -2355,7 +2357,7 @@ function copyBackupCode() {
 function renderBackup() {
   const c = storageCheck();
   app().innerHTML = header() + `<div class="bar"><button class="x" aria-label="返回" data-act="home">✖</button><div class="grow"><b>💾 备份 / 恢复进度</b></div></div>
-   <div class="card"><div>上次备份：<b>${S.lastBackup ? new Date(S.lastBackup).toLocaleString() : '从未备份'}</b></div>
+   <div class="card"><div>上次备份：<b id="lastbk">${lastBkText()}</b></div>
    <div class="muted">本地保存：${c.ok && SAVE_OK ? '✅ 正常' : '❌ 不可用'}${PERSISTED ? ' · 已申请持久存储' : ''} · 约 ${storageKB()} KB</div>
    ${c.reason ? `<div class="warn">⚠️ ${esc(c.reason)}</div>` : ''}</div>
    <div class="card">${backupCardHTML()}</div>`;
