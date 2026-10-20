@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261019-220532 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261020-172934 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -269,6 +269,81 @@ html:not([data-theme=classic]) .micerr{color:var(--hot)}
 .bk.restore{margin-top:16px;padding-top:12px;border-top:2px dashed rgba(128,128,128,.4)}
 .bkmsg{min-height:1.4em;margin:6px 0;font-weight:600}
 .bkmsg.good{color:#2b8a3e}.bkmsg.bad{color:#c92a2a}
+/* ===== 🍉 切西瓜复习 (styles ported from math-app; colours mapped to the vocab themes) ===== */
+.slice{--bg:#FFF8EC;--card:#fff;--line:#E7DCC8;--ink:#3b2f2a;--sub:#7a6a5f;--pri:#d9480f;--pri-ink:#a33a0a;--pri2:#2f9e44;--warn:#f08c00;--warn-soft:#fff0d1;--warn-ink:#a35f00;--ok:#2f9e44;--ok-soft:#dff3e3;--ok-ink:#23763a;--lav:#7c5cc4;--lav-soft:#ece5fa;--sky:#1c7ed6;--sky-soft:#dcebfb;--gold:#f2b400;--track:#e3d9c8;--bad-soft:#ffe3e3;--bad-ink:#c92a2a;--shadow:0 3px 12px rgba(0,0,0,.08);--confetti:#e03131,#2f9e44,#f2b400,#1c7ed6}
+html:not([data-theme=classic]) .slice{--bg:var(--bg2);--card:var(--sf);--line:var(--line);--ink:var(--tx);--sub:var(--mu);--pri:var(--btn);--pri-ink:var(--hd);--pri2:var(--grn);--ok:var(--grn);--ok-ink:var(--grn);--ok-soft:var(--sf3);--warn-soft:var(--sf2);--sky:var(--blu);--sky-soft:var(--sf3);--lav-soft:var(--sf2);--shadow:0 3px 12px var(--sh);--confetti:#B4614F,#6E9584,#B98637,#4F6A8E}
+html[data-theme=night] .slice{--gold:#C9A05A;--warn:#B98637;--track:#433C30;--lav:#8A7BB0}
+.slice{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+.sl-top{display:flex;align-items:center;gap:10px;padding:8px 12px;font-weight:800;color:var(--ink)}
+.sl-x{width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--line);color:var(--sub);font-size:16px}
+.sl-rd{font-size:14px;color:var(--sub);min-width:40px}
+.sl-hearts{font-size:18px;letter-spacing:1px}.sl-hearts span{display:inline-block;transition:transform .2s}.sl-hearts span:not(.on){opacity:.55}
+.sl-hearts.hurt{animation:slHurt .45s}
+@keyframes slHurt{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.sl-combo{font-size:13px;color:var(--warn-ink)}.sl-combo b{font-size:16px}
+.sl-score{min-width:62px;text-align:right;font-size:20px;color:var(--pri-ink);font-variant-numeric:tabular-nums}
+.sl-prompt{margin:2px 12px 6px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px 16px 12px;text-align:center;box-shadow:var(--shadow);max-height:30vh;overflow:auto}
+.sl-pl{font-size:12.5px;font-weight:700;color:var(--sub);margin-bottom:4px}
+.sl-pq{color:var(--ink);font-size:20px;font-weight:700;line-height:1.5;overflow-wrap:anywhere}
+.sl-pq .sl-orig{font-size:15px;font-weight:500;text-align:left}
+.sl-stage{position:relative;flex:1;overflow:hidden;touch-action:none;cursor:crosshair}
+.sl-stage.ended{touch-action:pan-y;cursor:auto}
+.sl-cv,.sl-fruits,.sl-float{position:absolute;inset:0;pointer-events:none}
+.sf{position:absolute;left:0;top:0;border-radius:50%;display:grid;place-items:center;overflow:hidden;color:var(--ink);will-change:transform;
+  background:radial-gradient(circle at 36% 30%,var(--card) 0 52%,var(--bad-soft) 100%);border:6px solid var(--ok);box-shadow:inset 0 0 0 4px var(--ok-soft),0 6px 14px rgba(0,0,0,.12)}
+.sf.c1{background:radial-gradient(circle at 36% 30%,var(--card) 0 52%,var(--warn-soft) 100%);border-color:var(--warn)}
+.sf.c2{background:radial-gradient(circle at 36% 30%,var(--card) 0 52%,var(--ok-soft) 100%);border-color:var(--pri2)}
+.sf.c3{background:radial-gradient(circle at 36% 30%,var(--card) 0 52%,var(--lav-soft) 100%);border-color:var(--lav)}
+.sf.gold{border-color:var(--gold);box-shadow:inset 0 0 0 4px var(--warn-soft),0 0 22px 4px var(--gold)}
+.sf.gold::after{content:'✨';position:absolute;top:4px;right:10px;font-size:16px}
+.sfc{font-size:26px;font-weight:700;white-space:nowrap;line-height:1.3;transform-origin:center;text-align:center}
+.sf.hint{border-color:var(--ok);animation:slHint .7s ease-in-out infinite alternate}
+@keyframes slHint{from{box-shadow:inset 0 0 0 4px var(--ok-soft),0 0 0 3px var(--ok),0 0 14px 2px var(--ok)}to{box-shadow:inset 0 0 0 4px var(--ok-soft),0 0 0 5px var(--ok),0 0 30px 8px var(--ok)}}
+.sf.bump{opacity:.55;filter:grayscale(.5);transition:opacity .3s,filter .3s}
+.sf.fade{opacity:0;transition:opacity .35s}
+.sf.half{transition:none}
+.sl-reveal{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;padding:12px}
+.sl-big{max-width:min(94%,640px);background:var(--card);color:var(--ink);border-radius:26px;padding:20px 26px;text-align:center;border:2px solid var(--gold);opacity:0;transform:scale(.82);transition:opacity .35s,transform .45s cubic-bezier(.2,1.4,.4,1);overflow-wrap:anywhere;font-size:16px}
+.sl-reveal.show .sl-big{opacity:1;transform:scale(1);pointer-events:auto;animation:slGlow 1.4s ease-in-out infinite alternate}
+.sl-reveal.miss .sl-big,.sl-reveal.learn .sl-big{border-color:var(--sky)}
+.sl-reveal.out .sl-big{opacity:0;transform:scale(1.06);transition:opacity .25s,transform .25s}
+@keyframes slGlow{from{box-shadow:0 0 0 3px var(--warn-soft),0 0 26px 4px var(--gold)}to{box-shadow:0 0 0 6px var(--warn-soft),0 0 56px 14px var(--gold)}}
+.sl-reveal.miss.show .sl-big,.sl-reveal.learn.show .sl-big{animation:none;box-shadow:0 0 0 4px var(--sky-soft),0 0 30px 6px var(--sky)}
+.sl-tag{display:inline-block;font-size:13px;font-weight:800;color:var(--sky);background:var(--sky-soft);border-radius:99px;padding:2px 10px;margin-bottom:6px}
+.sl-bt{font-size:18px;font-weight:800;color:var(--pri-ink);margin-bottom:6px}
+.sl-bf{font-size:2em;margin:6px 0;overflow-x:auto;overflow-y:hidden;padding:4px 0}
+.sl-bf.sm{font-size:1.375em;font-weight:700}
+.sl-bs{font-size:14.5px;color:var(--sub);margin-top:6px;line-height:1.55}
+.sl-ft{position:absolute;transform:translate(-50%,-50%);font-size:22px;font-weight:900;color:var(--ok-ink);white-space:nowrap;animation:slRise 1.05s ease-out forwards;text-shadow:0 1px 0 var(--card)}
+.sl-spd{position:relative;height:16px;margin:8px auto 0;max-width:420px;border-radius:9px;background:var(--line);overflow:hidden}
+.sl-spd i{position:absolute;left:0;top:0;bottom:0;background:var(--ok);border-radius:9px;transition:width .1s linear}
+.sl-spd.mid i{background:var(--gold)}.sl-spd.slow i{background:var(--sky)}
+.sl-spd span{position:relative;display:block;font-size:12px;line-height:16px;font-weight:800;color:var(--ink)}
+.sl-ft.spd{font-size:26px}
+.sl-ft.gold{color:var(--warn-ink)}
+@keyframes slRise{from{opacity:0;transform:translate(-50%,-30%) scale(.8)}20%{opacity:1;transform:translate(-50%,-60%) scale(1.1)}to{opacity:0;transform:translate(-50%,-160%) scale(1)}}
+.sl-end{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:10px 16px 24px;text-align:center;color:var(--ink)}
+.sl-stars{font-size:54px;letter-spacing:6px;color:var(--track)}.sl-stars .on{color:var(--gold);text-shadow:0 0 14px var(--gold)}
+.sl-et{font-size:22px;font-weight:900;color:var(--pri-ink);margin:2px 0 12px}
+.sl-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;max-width:620px;margin:0 auto 10px}
+.sl-nums div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 4px}.sl-nums b{display:block;font-size:22px;color:var(--pri-ink)}.sl-nums span{font-size:12px;color:var(--sub)}
+.sl-pts{max-width:620px;margin:0 auto 10px;background:var(--warn-soft);color:var(--warn-ink);border-radius:16px;padding:10px 12px;font-size:15px}.sl-pts b{font-size:20px}
+.sl-weak{max-width:620px;margin:0 auto 10px;background:var(--ok-soft);color:var(--ok-ink);border-radius:14px;padding:8px 12px;font-size:13.5px}
+.sl-rech{font-weight:800;margin:12px 0 8px;color:var(--sub);font-size:14px}
+.sl-recap{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;max-width:900px;margin:0 auto 14px;text-align:center}
+.sl-rc{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:16px;padding:10px 12px;min-width:0}
+.sl-rc.weak{border-left-color:var(--sky)}
+.sl-rc .sl-bt{font-size:14px;margin-bottom:2px}.sl-rc .sl-bf{font-size:17px;margin:2px 0;white-space:nowrap;overflow-x:auto}.sl-rc .sl-bf.sm{font-size:16px}.sl-rc .sl-bs{font-size:12.5px}
+.sl-btns{display:flex;gap:10px;max-width:520px;margin:0 auto}
+body.slicing{overflow:hidden;touch-action:none}
+.sl-btns .big{margin:0}.sl-pq .sl-say{font-size:30px;padding:4px 18px;margin-left:6px}.sl-pq .sl-cn{font-size:15px;color:var(--sub);font-weight:500}.sl-bp{color:var(--sub);font-size:15px}
+.slicecta{display:flex;align-items:center;gap:12px;width:100%;text-align:left}.slicecta .de{font-size:34px;flex:none}
+/* watermelon flesh inside the coloured rind (gold melons keep their glow) */
+.slice .sf:not(.gold){background:radial-gradient(circle at 38% 32%,#fff6f2 0 34%,#ffd3cc 72%,#ffb3a8 100%);border-color:#3f8f4f}
+.slice .sf.c1:not(.gold){border-color:#2f7d43}.slice .sf.c2:not(.gold){border-color:#4f9d5a}.slice .sf.c3:not(.gold){border-color:#2b6e3c}
+html[data-theme=eye] .slice .sf:not(.gold){background:radial-gradient(circle at 38% 32%,#F8EFE4 0 36%,#EBC9BC 74%,#DDAE9E 100%);border-color:#4E7F58}
+html[data-theme=night] .slice .sf:not(.gold){background:radial-gradient(circle at 38% 32%,#3A3129 0 36%,#4A3430 74%,#56393A 100%);border-color:#41664A}
+.slice .sf.hint{border-color:var(--ok)}
 </style></head>
 <body><div id="banner"></div><div id="app"></div><input type="file" id="wordfile" multiple accept=".docx,.csv,.txt,.tsv,.json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain,application/json" style="display:none"><div id="overlay" role="dialog" aria-modal="true"></div><div id="toast" role="status" aria-live="polite"></div>
 <script>const DATA={"sections":[{"id":"U1-V","unit":"8AU1","section":"Viewing","pages":"P4-5","title":"💧 Viewing & Listening","name":"8AU1 Viewing P4-5"},{"id":"U1-S","unit":"8AU1","section":"Speaking","pages":"P6-7","title":"🗣️ Speaking","name":"8AU1 Speaking P6-7"},{"id":"U1-R","unit":"8AU1","section":"Reading","pages":"P8-11","title":"🏜️ Reading","name":"8AU1 Reading P8-11"},{"id":"U2-W","unit":"8AU2","section":"Writing","pages":"P14-15","title":"✍️ Writing","name":"8AU2 Writing P14-15"},{"id":"U2-S","unit":"8AU2","section":"Speaking","pages":"P22-23","title":"📞 Speaking","name":"8AU2 Speaking P22-23"},{"id":"U2-R","unit":"8AU2","section":"Reading","pages":"P24-27","title":"🤖 Reading","name":"8AU2 Reading P24-27"}],"tips":[{"section":"U1-V","text":"关注听力材料中的数字\n要识别听力材料中与数字相关的内容，应当对一些特别的数字读法有所了解。\n（1）小数\n小数点通常读作“point”，小数点后的数字逐个读出。如：\n0.5: zero point five 2.75: two point seven five\n10.01: ten point zero one 3.14159: three point one four one five nine\n小数点后只有一个零时，也可以读作“o”。如：\n1.05: one point o five\n（2）分数\n分数由分子和分母组成。分子读作基数词，分母读作序数词。当分子大于1时，分母用复数形式。如：\n: one third : two thirds : five eighths\n\n以下是一些特殊的分数读法。\n: a half : a quarter : three quarters\n\n带分数要将整数部分和分数部分分开读。如：\n:twoandahalf : three and three quarters\n\n（3）百分数\n百分数中的“％”读作“per cent”，表示“百分之······”，无复数形式。如：\n50%: fifty per cent 25%: twenty-five per cent\n100%: one hundred per cent 12.5%: twelve point five per cent"},{"section":"U1-R","text":"构词法-转化法\n转化法是一种构词法，即一个词从一种词性转换为另一种词性并产生新的词义，而其形式保持不变。在英语中，最常见的转化法是名词和形容词转化为动词。\n（1）名词转化为动词\n\n（2）形容词转化为动词"},{"section":"U2-W","text":"如何撰写观点类文章\n(1)结构逻辑清晰。 文章需按照引言、主体、结尾的结构展开，逻辑清晰，层次分明。\n(2)明确表达观点。引言部分需直接表达观点，使读者迅速了解文章的 立场。如在课本Writing 板块的范文中，作者在引言部分直接表达了自己的 观点，即：数字生活虽然方便、有趣，但我们应该意识到它的缺点。\n(3 )说明理由，提供解释或例子。文章主体部分需通过具体的理由来支撑 观点。每个理由都应有详细的解释或具体的例子，以使文章更具说服力和可读性。\n如范文所示：理由1——数字生活导致过多的屏幕时间。(解释/例子——有 些人花费太多时间玩电脑游戏、观看视频或在线聊天，从而减少了进行健康户 外活动的时间);\n理由2——数字生活并不总是安全的。(解释/例子——当我们 访问某些网站时，其中隐藏的软件或病毒可能会收集我们的个人信息。)\n(4 )重述观点。 结尾部分需重述观点，强调文章的核心信息，以给读者留下 深刻印象。在范文中，作者在结尾部分重述了自己的观点，强调虽然数字技术给 我们的生活带来了许多好处，但也带来了问题，因此我们必须学会合理地使用它。"},{"section":"U2-S","text":"常用的投诉用语\nI would like to / I'd like to complain about...             我想投诉 … …\nI am calling about a problem I've met/ I’ve run into. 我打电话来是因为我遇到的一个问题。\nCould I speak to the manager? I'd like to make a complaint. 可以帮我找一下经理吗?我要投诉。\nExcuse me, but I'm not happy with ...                        抱歉，我对……不满意。\nI'm experiencing difficulties with the ... I   bought. Can you…? 我买的 … 有点问题。你能…吗?\nI’m sorry to have to say this, but I…                          我很抱歉这么说，但是我 ……"},{"section":"U2-R","text":"令人惊叹的数字技术\n数字技术使残障群体的生活便利了许多。例如， 一款为盲人设计的新型 智能手杖可以检测到任何使用者靠近的物体，警告使用者可能存在的危险。它还可以指路，并告知使用者公共汽车和火车的时刻表。人们相信这种技术 将使盲人的生活更安全、更便捷。\n数字技术使知识共享变得更加容易。它给予学生同等的学习机会，无论他们身处何地。根据2022年的一份报告，超过22%的印度人口不会读写。为了改变这种状况，印度为农村地区的学校提供了强大的互联网连接。那里的许多学生直到该项目启动才有机会学习。他们现在可以共享新徳里一所 顶级学校的精彩在线课程。\n消防机器人正在拯救生命。它们能走、能跑、能爬，还能和被困火场的人员进行交流。当机器人四处移动时，它们会向控制单元发送视频信息。通过这种方式，消防员可以清楚地看到火灾环境，然后制定稳妥的(救援)计划。在危险的情况下，机器人真的可以提供很大的帮助。"}],"words":[{"id":"U1-V-01","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"升","pos":"n.","en":"litre","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-02","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"1.","optional":true,"type":"word","cn":"毫升","pos":"n.","en":"millilitre","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-03","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"2.","optional":false,"type":"word","cn":"工厂","pos":"n.","en":"factory","phonetic":"","opp":"","oppCn":"","pl":"factories","forms":{},"alt":[],"notes":[]},{"id":"U1-V-04","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"3.","optional":false,"type":"word","cn":"十亿","pos":"n.","en":"billion","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-05","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"3.","optional":false,"type":"word","cn":"百万","pos":"n.","en":"million","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-06","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"含盐的，咸的","pos":"adj.","en":"salty","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-07","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"盐","pos":"n.","en":"salt","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-08","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"5.","optional":false,"type":"word","cn":"剩余部分；休息时间","pos":"n.","en":"rest","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-09","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"受污染的","pos":"adj.","en":"polluted","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-10","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"污染","pos":"v.","en":"pollute","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-11","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"污染","pos":"n.","en":"pollution","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-12","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"7.","optional":false,"type":"word","cn":"稀少的，珍贵的","pos":"adj.","en":"rare","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-13","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"7.","optional":false,"type":"word","cn":"罕有，很少","pos":"adv.","en":"rarely","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-14","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"8.","optional":false,"type":"phrase","cn":"参观水科学博物馆","pos":"","en":"visit the Water Science Museum","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-15","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"9.","optional":false,"type":"sentence","cn":"我们每天需要摄入多少水？","pos":"","en":"How much water do we need to take in every day?","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-16","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"*10.","optional":true,"type":"phrase","cn":"摄入，吸收","pos":"","en":"take in","phonetic":"","opp":"give out","oppCn":"散发，分发","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-17","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"11.","optional":false,"type":"phrase","cn":"把...收好并锁起来","pos":"","en":"lock up","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-18","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"12.","optional":false,"type":"phrase","cn":"被冰层或地下深处封存的淡水","pos":"","en":"fresh water locked up in ice or deep underground","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-19","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"13.","optional":false,"type":"phrase","cn":"饮用水不足","pos":"","en":"not enough drinking water","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-20","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"*14.","optional":true,"type":"sentence","cn":"这款产品的全球销售额达到了25亿美元。","pos":"","en":"Worldwide sales of the product reached 2.5 billion dollars.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-21","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"*14.","optional":true,"type":"phrase","cn":"数十亿","pos":"","en":"billions of","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-22","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"15.","optional":false,"type":"phrase","cn":"被...覆盖","pos":"","en":"be covered with","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-23","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"16.","optional":false,"type":"sentence","cn":"其余的是淡水","pos":"","en":"The rest is fresh water.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-24","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"*17.","optional":true,"type":"sentence","cn":"我们能接触到的大部分淡水都被污染了，只剩下大约0.3%供人们饮用。","pos":"","en":"Most of the fresh water we can reach is polluted, leaving only about 0.3% for people to drink.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["现在分词(leaving...)做结果状语，表示某事导致的结果"]},{"id":"U1-V-25","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"18.","optional":false,"type":"phrase","cn":"安全管理的饮用水","pos":"","en":"safely managed drinking water","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["过去分词(managed)做定语"]},{"id":"U1-V-26","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"19.","optional":false,"type":"word","cn":"流动","pos":"v.","en":"flow","phonetic":"","opp":"","oppCn":"","pl":"","forms":{"past":"flowed","ing":"flowing"},"alt":[],"notes":["flow - flowed, flowing"]},{"id":"U1-V-27","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"20.","optional":false,"type":"sentence","cn":"你的旅程将走向何方？","pos":"","en":"Where does your journey end?","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-28","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"21.","optional":false,"type":"phrase","cn":"水循环","pos":"","en":"water cycle","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-29","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"22.","optional":false,"type":"phrase","cn":"享受激动人心又令人满足的旅程","pos":"","en":"enjoy the exciting and satisfying ride","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-30","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"23.","optional":false,"type":"word","cn":"支持","pos":"n./v.","en":"support","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-31","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"23.","optional":false,"type":"word","cn":"支持者","pos":"n.","en":"supporter","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-V-32","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"24.","optional":false,"type":"sentence","cn":"在滋养生命方面，我深感自豪","pos":"","en":"In supporting life, I take great pride.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["状语前置 (In supporting life 放在句首)"]},{"id":"U1-V-33","unit":"8AU1","section":"U1-V","sub":"","group":"","no":"25.","optional":false,"type":"phrase","cn":"持续供给","pos":"","en":"continue to supply","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-01","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"1.","optional":false,"type":"word","cn":"展示，介绍","pos":"n.","en":"presentation","phonetic":"/ˌpreznˈteɪʃn/","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-02","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"1.","optional":false,"type":"phrase","cn":"进行小组展示","pos":"","en":"give a group presentation","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-03","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"1.","optional":false,"type":"word","cn":"展示，介绍(v.)；礼物(n.)","pos":"v./n.","en":"present","phonetic":"/prɪˈzent/ /ˈpreznt/","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["v. 展示，介绍 /prɪˈzent/","n. 礼物 /ˈpreznt/"]},{"id":"U1-S-04","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"2.","optional":false,"type":"word","cn":"有用的","pos":"adj.","en":"useful","phonetic":"","opp":"useless","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-05","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"2.","optional":false,"type":"sentence","cn":"我们来谈谈水有多重要吧？","pos":"","en":"Shall we talk about how useful water is?","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-06","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"2.","optional":false,"type":"word","cn":"有用地","pos":"adv.","en":"usefully","phonetic":"","opp":"uselessly","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-07","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"2.","optional":false,"type":"word","cn":"使用","pos":"n./v.","en":"use","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-08","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"3.","optional":false,"type":"word","cn":"无趣的，无聊的","pos":"adj.","en":"boring","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-09","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"3.","optional":false,"type":"sentence","cn":"恐怕有点无聊吧。","pos":"","en":"I’m afraid that’s a little boring.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-10","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"3.","optional":false,"type":"word","cn":"对...感到无聊的","pos":"adj.","en":"bored","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-11","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"3.","optional":true,"type":"word","cn":"使厌烦","pos":"v.","en":"bore","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-12","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"3.","optional":true,"type":"word","cn":"厌烦，无聊","pos":"n.","en":"boredom","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-13","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"4","optional":false,"type":"sentence","cn":"让我们分享一些新内容。","pos":"","en":"Let’s share something new.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-14","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"5","optional":false,"type":"word","cn":"化学品","pos":"n.","en":"chemical","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["可数名词 (c)，常用复数 chemicals"]},{"id":"U1-S-15","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"5","optional":false,"type":"word","cn":"化学","pos":"n.","en":"chemistry","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-16","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"5","optional":false,"type":"word","cn":"化学的","pos":"adj.","en":"chemical","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-17","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"5","optional":false,"type":"word","cn":"化学家","pos":"n.","en":"chemist","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-18","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"6","optional":false,"type":"word","cn":"废水","pos":"n.","en":"wastewater","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-19","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"7","optional":false,"type":"word","cn":"（净化或防治）处理，加工","pos":"n.","en":"treatment","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-20","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"7","optional":false,"type":"word","cn":"处理，治疗，对待","pos":"v.","en":"treat","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-21","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"8","optional":false,"type":"word","cn":"包括","pos":"v.","en":"include","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-22","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"8","optional":false,"type":"word","cn":"包括","pos":"prep.","en":"including","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-23","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"9","optional":false,"type":"word","cn":"研究，调查","pos":"v./n.","en":"research","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-24","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"9","optional":false,"type":"word","cn":"搜索，查找","pos":"v./n.","en":"search","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-25","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"10","optional":false,"type":"word","cn":"同意","pos":"v.","en":"agree","phonetic":"","opp":"disagree","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-26","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"10","optional":false,"type":"word","cn":"同意","pos":"n.","en":"agreement","phonetic":"","opp":"disagreement","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-27","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"*11","optional":true,"type":"sentence","cn":"我们来谈谈浪费水可能引起的问题怎么样？","pos":"","en":"What if we talk about the bad things that happen when we waste water?","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-28","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"*12.","optional":true,"type":"sentence","cn":"因为到处都是水，很多人不觉得有必要节约用水。","pos":"","en":"With water everywhere, many people don’t see the need to save it.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["“with...”这一介词短语的结构可以用于表达某种原因。\n类似的用法还有: With the weather so cold, we stayed indoors all day. \n“see”在这里的意思是“理解，明白”。\n“need”在这里做名词，类似的结构还有: “There is no need to do something...” 没有必要做某事"]},{"id":"U1-S-29","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"13","optional":false,"type":"sentence","cn":"我们使用的水越多，就需要更多的能源和化学品来处理废水。","pos":"","en":"The more water we use, the more energy and chemicals are needed for wastewater treatment.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-30","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"14","optional":false,"type":"sentence","cn":"这不仅浪费能源，而且会降低饮用水的安全性。","pos":"","en":"This not only wastes energy, but also makes water less safe for drinking.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-31","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"15","optional":false,"type":"sentence","cn":"我们可以在演示中加入更多这样的事实，以鼓励每个人在力所能及的情况下节约用水。","pos":"","en":"We can include more facts like this in our presentation to encourage everyone to save water when they can.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-32","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"16","optional":false,"type":"word","cn":"立刻，马上（6种说法）","pos":"adv.","en":"immediately","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["right now","right away","at once","without delay","in no time"],"notes":["= right now / right away / at once / without delay / in no time"]},{"id":"U1-S-33","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"17","optional":false,"type":"sentence","cn":"我马上就开始研究了！","pos":"","en":"I’ll start researching right away!","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-34","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"18","optional":false,"type":"sentence","cn":"我完全同意。","pos":"","en":"I couldn’t agree more.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["= I completely / totally agree."]},{"id":"U1-S-35","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"18","optional":false,"type":"phrase","cn":"同意某人","pos":"","en":"agree with sb","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-36","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"18","optional":false,"type":"phrase","cn":"同意做某事","pos":"","en":"agree to do sth","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-37","unit":"8AU1","section":"U1-S","sub":"P6","group":"","no":"18","optional":false,"type":"phrase","cn":"就某事达成一致","pos":"","en":"agree on/about sth","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-38","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"1","optional":false,"type":"phrase","cn":"关上水龙头的问题","pos":"","en":"a matter of turning off the tap","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-39","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"2","optional":false,"type":"word","cn":"除...之外；在...较远的一边","pos":"prep.","en":"beyond","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-40","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"3","optional":false,"type":"sentence","cn":"实际上，除此以外还有无数种方法。","pos":"","en":"Actually, there are countless methods beyond this.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["原文拼写 methonds 已更正为 methods"]},{"id":"U1-S-41","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"4","optional":false,"type":"word","cn":"节能的","pos":"adj.","en":"energy-saving","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-42","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"5","optional":false,"type":"word","cn":"洗碗机","pos":"n.","en":"dish-washer","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-43","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"6","optional":false,"type":"phrase","cn":"缩短淋浴时间","pos":"","en":"take shorter showers","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-44","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"7","optional":false,"type":"phrase","cn":"用灰水浇灌植物","pos":"","en":"water the plants with grey water","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-45","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"8","optional":false,"type":"phrase","cn":"使用节能洗衣机","pos":"","en":"use energy saving washing machines","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-46","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"9","optional":false,"type":"phrase","cn":"仅在洗碗机满载时运行","pos":"","en":"run the dishwasher only when it is full","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-47","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"10","optional":false,"type":"word","cn":"间接的","pos":"adj.","en":"indirect","phonetic":"","opp":"direct","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-48","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"10","optional":false,"type":"word","cn":"间接地","pos":"adv.","en":"indirectly","phonetic":"","opp":"directly","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-49","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"10","optional":false,"type":"word","cn":"方向","pos":"n.","en":"direction","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-50","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"11","optional":false,"type":"phrase","cn":"间接水足迹","pos":"","en":"indirect water footprint","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-51","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"12","optional":false,"type":"sentence","cn":"制造这些东西需要水，尽管我们看不到其中的水。","pos":"","en":"It takes water to make these things, even though we don’t see water in them.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-52","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"13","optional":false,"type":"sentence","cn":"浪费这些东西也意味着浪费水资源。","pos":"","en":"Wasting these things also means wasting water.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-53","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"14","optional":false,"type":"word","cn":"公斤，千克","pos":"n.","en":"kilo","phonetic":"","opp":"","oppCn":"","pl":"kilos","forms":{},"alt":["kilogram"],"notes":["= kilogram"]},{"id":"U1-S-54","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"15","optional":false,"type":"phrase","cn":"一公斤糖","pos":"","en":"a kilo of sugar","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-55","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"16","optional":false,"type":"word","cn":"汉堡包","pos":"n.","en":"hamburger","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-56","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"17","optional":false,"type":"word","cn":"棉织物，棉布","pos":"n.","en":"cotton","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-57","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"18","optional":false,"type":"phrase","cn":"一件棉质衬衫","pos":"","en":"a cotton shirt","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-58","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"19","optional":false,"type":"sentence","cn":"水在工业中有多重要？","pos":"","en":"How useful is water for industry?","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-59","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"20","optional":false,"type":"sentence","cn":"工厂是否正确处理了废水？","pos":"","en":"Are factories treating wastewater properly?","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-S-60","unit":"8AU1","section":"U1-S","sub":"P7","group":"","no":"21","optional":false,"type":"phrase","cn":"为你的受众提供新信息","pos":"","en":"provide new information to your audience","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-01","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"沙漠","pos":"n.","en":"desert","phonetic":"/ˈdezət/","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-02","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"1.","optional":true,"type":"word","cn":"甜点","pos":"n.","en":"dessert","phonetic":"/dɪˈzɜ:t/","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-03","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"2.","optional":false,"type":"word","cn":"肥皂","pos":"n.","en":"soap","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["a piece of soap 一片肥皂"]},{"id":"U1-R-04","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"3.","optional":false,"type":"word","cn":"角落","pos":"n.","en":"corner","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["in / on / at the corner of... 在...角落里"]},{"id":"U1-R-05","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"罐，壶，锅","pos":"n.","en":"pot","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["a water pot 一个水壶"]},{"id":"U1-R-06","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"5.","optional":false,"type":"phrase","cn":"出发，动身","pos":"","en":"set off","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["set out"],"notes":["= set out"]},{"id":"U1-R-07","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"5.","optional":false,"type":"phrase","cn":"出发去","pos":"","en":"set off for","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["leave for"],"notes":["= leave for"]},{"id":"U1-R-08","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"洞，坑","pos":"n.","en":"hole","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["a water hole 一个水坑"]},{"id":"U1-R-09","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"7.","optional":false,"type":"word","cn":"踩，迈步(v.)；脚步，台阶(n.)","pos":"v./n.","en":"step","phonetic":"","opp":"","oppCn":"","pl":"","forms":{"past":"stepped","pp":"stepped"},"alt":[],"notes":["step - stepped - stepped","step into the water 踩入，踏入水中"]},{"id":"U1-R-10","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"8.","optional":false,"type":"word","cn":"泥","pos":"n.","en":"mud","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-11","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"8.","optional":false,"type":"word","cn":"泥泞的","pos":"adj.","en":"muddy","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-12","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"9.","optional":false,"type":"word","cn":"用水清洗（身体部位）","pos":"v.","en":"bathe","phonetic":"/beɪð/","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-13","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"9.","optional":false,"type":"word","cn":"浴缸，洗澡","pos":"n.","en":"bath","phonetic":"/bɑ:θ/","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-14","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"10","optional":false,"type":"word","cn":"照耀","pos":"v.","en":"shine","phonetic":"","opp":"","oppCn":"","pl":"","forms":{"past":"shone","pp":"shone"},"alt":[],"notes":["shine - shone - shone","The sun shines brightly. 阳光明媚"]},{"id":"U1-R-15","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"11.","optional":false,"type":"word","cn":"向前","pos":"adv.","en":"forward","phonetic":"","opp":"backward","oppCn":"","pl":"","forms":{},"alt":[],"notes":["throw my hair forward 将头发甩到前面"]},{"id":"U1-R-16","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"12.","optional":false,"type":"word","cn":"倒出","pos":"v.","en":"pour","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["pour water over my hair 往头发上倒水","pour water into a container 将水倒入一个容器中"]},{"id":"U1-R-17","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"12-1","optional":false,"type":"phrase","cn":"闭上我的眼睛","pos":"","en":"keep my eyes shut","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-18","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"13.","optional":false,"type":"word","cn":"小心地，仔细地","pos":"adv.","en":"carefully","phonetic":"","opp":"carelessly","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-19","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"13.","optional":false,"type":"word","cn":"小心的，仔细的","pos":"adj.","en":"careful","phonetic":"","opp":"careless","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-20","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"13.","optional":false,"type":"word","cn":"关心，照顾","pos":"n./v.","en":"care","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["care for = take care of"]},{"id":"U1-R-21","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"14.","optional":false,"type":"word","cn":"滴，水珠；掉落","pos":"n./v.","en":"drop","phonetic":"","opp":"","oppCn":"","pl":"","forms":{"past":"dropped","pp":"dropped"},"alt":[],"notes":["drop - dropped - dropped","= drip (n.) 水滴"]},{"id":"U1-R-22","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"15.","optional":false,"type":"word","cn":"完全地，充分地","pos":"adv.","en":"fully","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["be fully used 被充分使用"]},{"id":"U1-R-23","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"15.","optional":false,"type":"word","cn":"满的","pos":"adj.","en":"full","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["be full of = be filled with 充满了"]},{"id":"U1-R-24","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"15.","optional":false,"type":"word","cn":"装满","pos":"v.","en":"fill","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["fill her pot with water 往她的罐子里注满水"]},{"id":"U1-R-25","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"16.","optional":false,"type":"word","cn":"珍贵的","pos":"adj.","en":"precious","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-26","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"17.","optional":false,"type":"word","cn":"肩膀(n.)；承担(v.)","pos":"n./v.","en":"shoulder","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["shoulder the duty for ... 承担...的责任"]},{"id":"U1-R-27","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"18.","optional":false,"type":"word","cn":"蛇；蜿蜒伸展","pos":"n./v.","en":"snake","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-28","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"19.","optional":false,"type":"word","cn":"口渴的","pos":"adj.","en":"thirsty","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-29","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"19.","optional":false,"type":"word","cn":"口渴","pos":"n.","en":"thirst","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-30","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"20.","optional":false,"type":"phrase","cn":"在沙漠","pos":"","en":"in the desert","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-31","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"21.","optional":false,"type":"phrase","cn":"在衣角上系了一块肥皂","pos":"","en":"tie a piece of soap into the corner of my clothes","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-32","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"*22.","optional":true,"type":"phrase","cn":"揉我的眼睛","pos":"","en":"rub my eyes","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["rubber 橡皮 n."]},{"id":"U1-R-33","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"23.","optional":false,"type":"phrase","cn":"一个顶在我的头上，另一个夹在腋下","pos":"","en":"put one on my head and the other under my arm","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-34","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"24.","optional":false,"type":"phrase","cn":"瞭望，眺望我的水","pos":"","en":"look out over my water","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-35","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"25.","optional":false,"type":"phrase","cn":"干涸","pos":"","en":"dry up","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-36","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"26.","optional":false,"type":"phrase","cn":"还要两个月（2种说法）","pos":"","en":"another two months","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["two more months"],"notes":["= two more months"]},{"id":"U1-R-37","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"27","optional":false,"type":"phrase","cn":"防止泥巴进入","pos":"","en":"keep the mud out","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-38","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"28","optional":false,"type":"phrase","cn":"将水面上的浮沫推向一侧","pos":"","en":"push the scum on the water to the side","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["原文拼写 wate 已更正为 water；scum 浮沫"]},{"id":"U1-R-39","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"*29.","optional":true,"type":"phrase","cn":"把一块布盖在了罐口上","pos":"","en":"place a piece of cloth over the mouth of the water pot","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-40","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"30.","optional":false,"type":"sentence","cn":"每一滴水都被彻底用足。","pos":"","en":"Every drop of water is fully used.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-41","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"*31.","optional":true,"type":"sentence","cn":"在接下来的一个星期里，我们会看到水池变得越来越小。","pos":"","en":"Over the next week, we watch our pool get smaller.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-42","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"32","optional":false,"type":"phrase","cn":"悄然消失","pos":"","en":"quietly disappear","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-43","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"32-1","optional":false,"type":"phrase","cn":"准备离开","pos":"","en":"prepare to leave","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-44","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"32-2","optional":false,"type":"phrase","cn":"继续前行","pos":"","en":"move on","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-45","unit":"8AU1","section":"U1-R","sub":"","group":"","no":"*33.","optional":true,"type":"sentence","cn":"我从未去过沙漠，也无法想象那里的生活。","pos":"","en":"I have never been to the desert, nor can I imagine the life there.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-46","unit":"8AU1","section":"U1-R","sub":"","group":"文中的时间状语从句","no":"34.","optional":false,"type":"sentence","cn":"当我醒来时，天空还是阴沉沉的。","pos":"","en":"The sky is grey when I wake up.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-47","unit":"8AU1","section":"U1-R","sub":"","group":"文中的时间状语从句","no":"35.","optional":false,"type":"sentence","cn":"当我和妹妹还小的时候，妈妈常常只用一杯水给我们洗澡。","pos":"","en":"Mom used to bathe my sister and me with just one cup of water when we were small.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-48","unit":"8AU1","section":"U1-R","sub":"","group":"文中的时间状语从句","no":"36.","optional":false,"type":"sentence","cn":"当水打湿我的头和脖子时，我能感觉到水的温热。","pos":"","en":"I can feel the heat as the water wets my head and my neck.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-49","unit":"8AU1","section":"U1-R","sub":"","group":"文中的时间状语从句","no":"37.","optional":false,"type":"sentence","cn":"还有大概一个月它就要干涸了。","pos":"","en":"We will have about a month before it dries up.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U1-R-50","unit":"8AU1","section":"U1-R","sub":"","group":"文中的时间状语从句","no":"38.","optional":false,"type":"sentence","cn":"我小心翼翼地把肥皂擦到头发和皮肤上，直到每一滴水都被用完。","pos":"","en":"I carefully rub the soap into my hair and skin until every drop of water is fully used.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-01","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"意见；看法","pos":"n.","en":"opinion","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-02","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"2.","optional":false,"type":"word","cn":"意识到；明白","pos":"adj.","en":"aware","phonetic":"","opp":"unaware","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-03","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"2.","optional":false,"type":"word","cn":"意识","pos":"n.","en":"awareness","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-04","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"3.","optional":false,"type":"word","cn":"不利因素；缺点","pos":"n.","en":"disadvantage","phonetic":"","opp":"advantage","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-05","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"藏；隐蔽","pos":"v.","en":"hide","phonetic":"","opp":"","oppCn":"","pl":"","forms":{"past":"hid","pp":"hidden"},"alt":[],"notes":["hide - hid - hidden"]},{"id":"U2-W-06","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"隐藏的","pos":"adj.","en":"hidden","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-07","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"5.","optional":false,"type":"word","cn":"病毒","pos":"n.","en":"virus","phonetic":"","opp":"","oppCn":"","pl":"viruses","forms":{},"alt":[],"notes":["复数 viruses /ˈvaɪərəsɪz/"]},{"id":"U2-W-08","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"结束；结尾；结论","pos":"n.","en":"conclusion","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["reach / make a conclusion 得出结论"]},{"id":"U2-W-09","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"(使)结束，终止","pos":"v.","en":"conclude","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-10","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"7.","optional":false,"type":"word","cn":"优势；益处/使受益","pos":"n./v.","en":"benefit","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["benefit (from) 从……中受益"]},{"id":"U2-W-11","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"8.","optional":false,"type":"sentence","cn":"依我看","pos":"","en":"In my opinion, ...","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["In my view, ...","In my eyes, ...","From my point of view, ...","From my perspective, ...","As far as I’m concerned, ..."],"notes":["同义表达：In my view, ... / In my eyes, ... / From my point of view, ... / From my perspective, ... / As far as I’m concerned, ..."]},{"id":"U2-W-12","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"9.","optional":false,"type":"phrase","cn":"知道；意识到","pos":"","en":"be aware of","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-13","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"*10.","optional":true,"type":"sentence","cn":"首先，它会导致屏幕(关注)时间过长。","pos":"","en":"First of all, it leads to too much screen time.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-14","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"11.","optional":false,"type":"sentence","cn":"总结，综上","pos":"","en":"In conclusion, ...","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["In summary, ...","In short, ...","To sum up, ...","To conclude, ...","All in all, ..."],"notes":["同义表达：In summary, ... / In short, ... / To sum up, ... / To conclude, ... / All in all, ..."]},{"id":"U2-W-15","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"12","optional":false,"type":"phrase","cn":"你对数字生活的看法","pos":"","en":"your views on digital life","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-16","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"13","optional":false,"type":"phrase","cn":"你对数字生活的态度","pos":"","en":"your attitude towards digital life","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-17","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"14","optional":false,"type":"phrase","cn":"积极/消极的态度","pos":"","en":"positive/ negative attitude","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-18","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"15","optional":false,"type":"phrase","cn":"意识到它的弊端","pos":"","en":"be aware of its disadvantages","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-19","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"16","optional":false,"type":"phrase","cn":"导致过长的屏幕使用时间","pos":"","en":"lead to too much screen time","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-20","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"17","optional":false,"type":"phrase","cn":"花费太多时间网上聊天","pos":"","en":"spend too much time chatting online","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-21","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"18","optional":false,"type":"phrase","cn":"用于健康的户外活动的时间变少","pos":"","en":"have less time for healthy outdoor activities","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-22","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"19","optional":false,"type":"phrase","cn":"浏览一些网站","pos":"","en":"visit some websites","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-23","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"20","optional":false,"type":"phrase","cn":"隐藏的软件或者病毒","pos":"","en":"hidden software or viruses","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-24","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"21","optional":false,"type":"phrase","cn":"收集你的个人信息","pos":"","en":"collect your personal information","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-25","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"22","optional":false,"type":"phrase","cn":"给我们的生活带来诸多好处","pos":"","en":"bring many benefits to our lives","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-26","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"23","optional":false,"type":"phrase","cn":"引发问题","pos":"","en":"cause problems","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-W-27","unit":"8AU2","section":"U2-W","sub":"","group":"","no":"24","optional":false,"type":"phrase","cn":"学会明智地使用它","pos":"","en":"learn to use it wisely","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-01","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"投诉；抱怨","pos":"n.","en":"complaint","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-02","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"抱怨；埋怨；发牢骚","pos":"v.","en":"complain","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-03","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"2.","optional":false,"type":"word","cn":"按，压","pos":"v.","en":"press","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-04","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"3.","optional":false,"type":"word","cn":"不便；麻烦；困难","pos":"n.","en":"inconvenience","phonetic":"","opp":"convenience","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-05","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"3.","optional":false,"type":"word","cn":"不方便的；引起麻烦的","pos":"adj.","en":"inconvenient","phonetic":"","opp":"convenient","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-06","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"重复；重做；重说","pos":"v.","en":"repeat","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-07","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"4.","optional":true,"type":"word","cn":"重复；重做；重说","pos":"n.","en":"repetition","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-08","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"5.","optional":false,"type":"word","cn":"几个人；几件事物","pos":"n.","en":"couple","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-09","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"(屏幕)冻结,结冰","pos":"v.","en":"freeze","phonetic":"","opp":"","oppCn":"","pl":"","forms":{"past":"froze","pp":"frozen"},"alt":[],"notes":["freeze - froze - frozen"]},{"id":"U2-S-10","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"极冷的","pos":"adj.","en":"freezing","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-11","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"6.","optional":false,"type":"word","cn":"冷冻的","pos":"adj.","en":"frozen","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-12","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"7.","optional":false,"type":"word","cn":"软件","pos":"n.","en":"software","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["不可数名词 (un.)"]},{"id":"U2-S-13","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"8.","optional":false,"type":"word","cn":"应用程序；应用软件","pos":"n.","en":"app","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["= application"]},{"id":"U2-S-14","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"9.","optional":false,"type":"word","cn":"(互联)网络","pos":"n.","en":"network","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-15","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"10.","optional":false,"type":"phrase","cn":"向某人抱怨某事（2种说法）","pos":"","en":"make a complaint to sb about sth","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["complain to sb about sth"],"notes":["= complain to sb about sth"]},{"id":"U2-S-16","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"11.","optional":false,"type":"phrase","cn":"客服","pos":"","en":"customer service","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-17","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"12.","optional":false,"type":"sentence","cn":"我想投诉我上周买的笔记本电脑。","pos":"","en":"I’d like to make a complaint about the laptop I bought last week.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-18","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"*13.","optional":true,"type":"phrase","cn":"按下按钮","pos":"","en":"press the button","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-19","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"14.","optional":false,"type":"sentence","cn":"它总是自动关机。","pos":"","en":"It keeps shutting down on its own.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["on its own 表示“自动地” = automatically"]},{"id":"U2-S-20","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"15.","optional":false,"type":"phrase","cn":"订单号","pos":"","en":"order number","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-21","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"*16.","optional":true,"type":"phrase","cn":"订购这本书","pos":"","en":"place an order for this book","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-22","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"17.","optional":false,"type":"sentence","cn":"您试过关机再开机吗?","pos":"","en":"Have you tried turning it off and on again?","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-23","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"18.","optional":false,"type":"sentence","cn":"我重复过好几次了，但没用。","pos":"","en":"I’ve repeated that a couple of times, but it didn’t help.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-24","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"","optional":false,"type":"phrase","cn":"技术支持团队","pos":"","en":"technical support team","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-25","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"19.","optional":false,"type":"phrase","cn":"给……回电话","pos":"","en":"call sb back","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-26","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"20.","optional":false,"type":"phrase","cn":"升级软件","pos":"","en":"update the software","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-27","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"21.","optional":false,"type":"phrase","cn":"(显示)空间不足","pos":"","en":"run out of space","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-28","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"22.","optional":false,"type":"phrase","cn":"清理不需要的应用程序","pos":"","en":"clear out apps that you don’t need","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-29","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"23.","optional":false,"type":"phrase","cn":"无法连接互联网","pos":"","en":"fail to connect to the internet","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-30","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"*24.","optional":true,"type":"phrase","cn":"未能做成某事","pos":"","en":"fail to do sth","phonetic":"","opp":"succeed in doing sth","oppCn":"成功做某事","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-S-31","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"*24.","optional":true,"type":"phrase","cn":"成功做某事（3种说法）","pos":"","en":"succeed in doing sth","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["be successful in doing sth","manage to do sth"],"notes":["= be successful in doing sth","= manage to do sth"]},{"id":"U2-S-32","unit":"8AU2","section":"U2-S","sub":"","group":"","no":"25*","optional":true,"type":"phrase","cn":"检查您的Wi-Fi，确保已连接到正确的网络。","pos":"","en":"check your Wi-Fi and make sure it’s connected to the right network","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-01","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"有残疾的","pos":"adj.","en":"disabled","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-02","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"能够的","pos":"adj.","en":"able","phonetic":"","opp":"unable","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-03","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"使...能够","pos":"v.","en":"enable","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["enable sb to do sth 使某人能够做某事"]},{"id":"U2-R-04","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"1.","optional":false,"type":"word","cn":"能力","pos":"n.","en":"ability","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["have the ability to do sth 有能力做某事"]},{"id":"U2-R-05","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"2.","optional":false,"type":"word","cn":"类型；种类","pos":"n.","en":"type","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["= kind"]},{"id":"U2-R-06","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"3.","optional":false,"type":"word","cn":"瞎的；失明的","pos":"adj.","en":"blind","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["the blind 盲人"]},{"id":"U2-R-07","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"发现；查明；侦察出","pos":"v.","en":"detect","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-08","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"侦查；探测；发现","pos":"n.","en":"detection","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-09","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"侦探","pos":"n.","en":"detective","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-10","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"4.","optional":false,"type":"word","cn":"探测器","pos":"n.","en":"detector","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-11","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"5.","optional":false,"type":"word","cn":"物体；东西","pos":"n.","en":"object","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-12","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"6.","optional":false,"type":"phrase","cn":"一……就……","pos":"","en":"as soon as","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-13","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"7.","optional":false,"type":"word","cn":"提醒注意;使警惕","pos":"v.","en":"warn","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-14","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"7.","optional":false,"type":"word","cn":"警告；警示","pos":"n.","en":"warning","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-15","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"8.","optional":false,"type":"word","cn":"知会；通知","pos":"v.","en":"inform","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-16","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"8.","optional":false,"type":"word","cn":"信息；消息","pos":"n.","en":"information","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-17","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"9.","optional":false,"type":"word","cn":"调查报告/汇报；报告","pos":"n./v.","en":"report","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-18","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"9.","optional":false,"type":"word","cn":"记者","pos":"n.","en":"reporter","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["journalist"],"notes":["= journalist"]},{"id":"U2-R-19","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"10.","optional":false,"type":"word","cn":"人口，人口数量","pos":"n.","en":"population","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-20","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"11.","optional":false,"type":"word","cn":"乡村的；农村的","pos":"adj.","en":"rural","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-21","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"11.","optional":true,"type":"word","cn":"城市的；都市的","pos":"adj.","en":"urban","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-22","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"12.","optional":false,"type":"word","cn":"连接","pos":"n.","en":"connection","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-23","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"12.","optional":false,"type":"word","cn":"(使)连接；联结","pos":"v.","en":"connect","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["connect with/ to... 连接至..."]},{"id":"U2-R-24","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"13.","optional":false,"type":"word","cn":"灭火；消防","pos":"n.","en":"firefighting","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["fight - fought - fought 战斗 v."]},{"id":"U2-R-25","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"13.","optional":false,"type":"word","cn":"消防队员","pos":"n.","en":"firefighter","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-26","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"14.","optional":false,"type":"word","cn":"发送","pos":"v.","en":"send","phonetic":"","opp":"","oppCn":"","pl":"","forms":{"past":"sent","pp":"sent"},"alt":[],"notes":["send - sent - sent"]},{"id":"U2-R-27","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"15.","optional":false,"type":"word","cn":"装置；机件","pos":"n.","en":"unit","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-28","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"15.1","optional":false,"type":"phrase","cn":"阅读一篇线上文章","pos":"","en":"read an online article","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-29","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"16.","optional":false,"type":"sentence","cn":"数字技术使残障群体的生活便利了许多。","pos":"","en":"Digital technology makes life a lot easier for the disabled.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-30","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"*17.","optional":true,"type":"sentence","cn":"一款为盲人设计的新型智能手杖可以检测到任何使用者靠近的物体。","pos":"","en":"A new type of smart walking stick for the blind can detect any object as soon as the person gets close.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-31","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"18.","optional":false,"type":"phrase","cn":"警告使用者可能存在的危险","pos":"","en":"warn the person of the danger","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-32","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"18.1","optional":false,"type":"phrase","cn":"指路","pos":"","en":"give directions","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-33","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"19.","optional":false,"type":"phrase","cn":"通知某人某事","pos":"","en":"inform sb of/about sth","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-34","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"19.","optional":false,"type":"phrase","cn":"通知用户有关公交和火车时刻表的信息","pos":"","en":"inform its owner of the bus and train timetable","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-35","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"20.","optional":false,"type":"sentence","cn":"人们相信(用于引出一个普遍的观点)","pos":"","en":"It is believed that...","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-36","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"20.1","optional":false,"type":"phrase","cn":"让盲人的生活更安全、更便利","pos":"","en":"make the lives of blind people safer and easier","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-37","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"*21.","optional":true,"type":"sentence","cn":"数字技术使知识共享变得更加容易。","pos":"","en":"Digital technology makes it easier to share knowledge.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["it 充当形式宾语，句子真正的宾语是后面的动词不定式部分：to share knowledge"]},{"id":"U2-R-38","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"*22.","optional":true,"type":"sentence","cn":"它给予学生同等的学习机会，无论他们身处何地。","pos":"","en":"It gives students the same chance to learn, no matter where they live.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["no matter where是一个引导让步状语从句的短语，意思是“无论在哪”或“不管在哪”。它用于表示某个条件或情况不会影响主句中的动作或状态，或强调某个动作或状态在任何情况下都成立。\n①no mater how 无论怎样。No matter how hard you try, you  won't succeed without practice.\n②no matter when 无论何时。You are welcome to visit, no matter when you arrive.\n③no matter who无论是谁。No matter who you are, you must follow the rules."]},{"id":"U2-R-39","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"23.","optional":false,"type":"phrase","cn":"根据；依据","pos":"","en":"according to","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-40","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"*24.","optional":true,"type":"phrase","cn":"改变这种状况","pos":"","en":"change this situation","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-41","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"*25.","optional":true,"type":"sentence","cn":"印度为农村地区的学校提供了强大的互联网连接。","pos":"","en":"Indian schools in rural areas were provided with a powerful internet connection.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-42","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"26.","optional":false,"type":"phrase","cn":"为某人提供某物（2种说法）","pos":"","en":"provide sb with sth","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":["provide sth for sb"],"notes":["= provide sth for sb"]},{"id":"U2-R-43","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"27.","optional":false,"type":"phrase","cn":"走来走去；四处走动","pos":"","en":"move around","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-44","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"28","optional":false,"type":"sentence","cn":"许多学生直到项目开始后才有机会学习。","pos":"","en":"Many of the students didn’t have a chance to learn until the project started.","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-45","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"29","optional":false,"type":"phrase","cn":"享受顶尖学校教授的精彩在线课程","pos":"","en":"enjoy wonderful online lessons taught at a top school","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":["原文拼写 lessoins 已更正为 lessons"]},{"id":"U2-R-46","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"30","optional":false,"type":"phrase","cn":"与被困在火灾中的人进行沟通","pos":"","en":"communicate with people caught in a fire","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-47","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"31","optional":false,"type":"phrase","cn":"将视频信息发送至控制单元","pos":"","en":"send video information to the control unit","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-48","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"32","optional":false,"type":"phrase","cn":"用这种方法；以这种方式","pos":"","en":"in this way","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-49","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"33","optional":false,"type":"phrase","cn":"清晰看到火场环境","pos":"","en":"see the fire environment clearly","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-50","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"34","optional":false,"type":"phrase","cn":"制定安全计划","pos":"","en":"make a safe plan","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-51","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"35","optional":false,"type":"phrase","cn":"在危险情况下提供极大帮助","pos":"","en":"a great help in dangerous situations","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]},{"id":"U2-R-52","unit":"8AU2","section":"U2-R","sub":"","group":"","no":"36","optional":false,"type":"phrase","cn":"在数字时代","pos":"","en":"in the digital age","phonetic":"","opp":"","oppCn":"","pl":"","forms":{},"alt":[],"notes":[]}]};</script>
@@ -883,6 +958,339 @@ const Importer = (() => {
   return { decodeText, parseFile, parseDocxBuffer, parseDelimited, parseJSON, parseTitle, rowsToEntries, makeEntries, inflateRaw, unzipText, docxXmlToRows, docxXmlToDoc, paragraphsToEntries, splitEnZhLine, stats, clean, stripSerial, stripSerialLines, stripBareSeq };
 })();
 
+/* ========== 🍉 切西瓜复习：把今天复习过的单词做成“切西瓜”小游戏（引擎移植自 math-app/src/slice.js） ==========
+   引擎只负责画面与交互；题目、积分、勋章由 app.js 通过 cfg 传入/回调。
+   - 水果是 DOM（里面是 KaTeX），每帧只改 transform；刀光、果汁、粒子用一个 canvas。
+   - 切中正确答案：果子沿刀口裂成两半 + 果汁，粒子飞向屏幕中央拼成“大公式卡”，发光后淡出。
+   - 切错：轻轻弹开 + 屏幕小抖动，正确的那个发光提示（慢动作），可以补切看大卡（不得分）。
+   - 漏掉：正确答案掉出屏幕，扣一颗心，也会展示大卡帮助记忆。 */
+var VSlice = (function(){
+'use strict';
+var ROUNDS = 10, LIVES = 3;
+var G = null; /* 当前游戏 */
+function el(tag, cls, html){ var e = document.createElement(tag); if(cls) e.className = cls; if(html!=null) e.innerHTML = html; return e; }
+function rnd(a, b){ return a + Math.random()*(b-a); }
+function shuffle(a){ a = a.slice(); for(var i=a.length-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function cssVar(n, d){ try{ var v = getComputedStyle(document.documentElement).getPropertyValue(n).trim(); return v || d; }catch(e){ return d; } }
+function now(){ return performance.now(); }
+/* 线段与圆是否相交 */
+function segHit(x1, y1, x2, y2, cx, cy, r){
+  var dx = x2-x1, dy = y2-y1, L = dx*dx+dy*dy, t = L ? ((cx-x1)*dx+(cy-y1)*dy)/L : 0; t = Math.max(0, Math.min(1, t));
+  var px = x1+t*dx-cx, py = y1+t*dy-cy; return px*px+py*py <= r*r;
+}
+/* 用穿过中心、方向为 (dx,dy) 的直线把 w×h 的方块切成两半，返回 clip-path 多边形（百分比） */
+function halfPoly(w, h, dx, dy, side){
+  var pts = [[0,0],[w,0],[w,h],[0,h]], cx = w/2, cy = h/2, out = [];
+  var s = function(p){ return side*((p[0]-cx)*dy - (p[1]-cy)*dx); };
+  for(var i=0;i<4;i++){ var a = pts[i], b = pts[(i+1)%4], sa = s(a), sb = s(b);
+    if(sa>=0) out.push(a);
+    if((sa>=0) !== (sb>=0)){ var t = sa/(sa-sb); out.push([a[0]+t*(b[0]-a[0]), a[1]+t*(b[1]-a[1])]); } }
+  return 'polygon(' + out.map(function(p){ return (p[0]/w*100).toFixed(1)+'% '+(p[1]/h*100).toFixed(1)+'%'; }).join(',') + ')';
+}
+function sfx(k, o){ if(G && G.cfg.sfx) try{ G.cfg.sfx(k, o); }catch(e){} }
+
+function start(cfg){
+  close();
+  var root = el('div', 'slice'); root.id = 'slice'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', '切西瓜复习游戏');
+  root.innerHTML = '<div class="sl-top"><button class="sl-x" aria-label="退出">✕</button><div class="sl-rd"></div><div class="sl-hearts" aria-label="生命"></div><div class="grow"></div><div class="sl-combo"></div><div class="sl-score">0</div></div>'
+    + '<div class="sl-prompt"><div class="sl-pl"></div><div class="sl-pq"></div><div class="sl-spd"><i></i><span></span></div></div>'
+    + '<div class="sl-stage"><canvas class="sl-cv"></canvas><div class="sl-fruits"></div><div class="sl-reveal"></div><div class="sl-float"></div></div>';
+  var sy = window.scrollY || 0; try{ window.scrollTo(0, 0); }catch(e){}
+  document.body.appendChild(root); document.body.classList.add('slicing');
+  G = {cfg: cfg, root: root, stage: root.querySelector('.sl-stage'), cv: root.querySelector('.sl-cv'), layer: root.querySelector('.sl-fruits'),
+    sy: sy, reveal: root.querySelector('.sl-reveal'), flt: root.querySelector('.sl-float'),
+    items: cfg.items.slice(0, cfg.rounds || ROUNDS), round: -1, lives: LIVES, score: 0, combo: 0, maxCombo: 0,
+    correct: 0, wrong: 0, miss: 0, gold: 0, seen: [], weak: [], fruits: [], debris: [], parts: [], trail: [],
+    ts: (window.__vSliceTS || 1), raf: 0, last: now(), phase: 'play', shake: 0, ptr: null, lastWhoosh: 0, log: [], times: [], rt: 0};
+  try{ G.ctx = G.cv.getContext && G.cv.getContext('2d'); }catch(e){ G.ctx = null; }
+  if(!G.ctx){ var nop = function(){}; G.ctx = {setTransform: nop, clearRect: nop, beginPath: nop, arc: nop, fill: nop, moveTo: nop, lineTo: nop, stroke: nop}; } /* 没有 canvas 也能玩（只是没有粒子） */
+  G.colors = (cssVar('--confetti', '#6E9584,#B98637,#B4614F')).split(',').map(function(x){ return x.trim(); });
+  G.trailCol = cssVar('--pri', '#4A7563');
+  root.querySelector('.sl-x').addEventListener('click', function(){ var c = G && G.cfg; close(); if(c && c.onQuit) c.onQuit(); });
+  bindInput();
+  resize(); G.onResize = function(){ resize(); }; window.addEventListener('resize', G.onResize);
+  hud(); nextRound();
+  G.raf = requestAnimationFrame(loop);
+  return G;
+}
+function close(){
+  if(!G) return; cancelAnimationFrame(G.raf); window.removeEventListener('resize', G.onResize);
+  clearTimeout(G.t1); clearTimeout(G.t2); clearTimeout(G.t3); clearTimeout(G.t4);
+  if(G.root && G.root.parentNode) G.root.parentNode.removeChild(G.root); document.body.classList.remove('slicing'); var sy = G.sy; G = null; try{ if(sy) window.scrollTo(0, sy); }catch(e){}
+}
+function resize(){
+  var r = G.stage.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  G.W = r.width; G.H = r.height; G.cv.width = Math.round(r.width*dpr); G.cv.height = Math.round(r.height*dpr);
+  G.cv.style.width = r.width+'px'; G.cv.style.height = r.height+'px'; G.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function hud(){
+  var r = G.root;
+  r.querySelector('.sl-rd').textContent = (Math.min(G.round+1, G.items.length)) + '/' + G.items.length;
+  r.querySelector('.sl-hearts').innerHTML = [0,1,2].map(function(i){ return '<span class="'+(i<G.lives?'on':'')+'">'+(i<G.lives?'❤️':'🤍')+'</span>'; }).join('');
+  r.querySelector('.sl-score').textContent = G.score;
+  var m = mult(); r.querySelector('.sl-combo').innerHTML = G.combo>=2 ? '连击 <b>'+G.combo+'</b>'+(m>1?' · ×'+m:'') : '';
+}
+var FAST = 3, SLOWT = 15;
+function speedK(t){ return t <= FAST ? 1 : Math.max(0, 1 - (t-FAST)/(SLOWT-FAST)); }
+function spdBar(){ var b = G.root.querySelector('.sl-spd'); if(!b) return; var k = speedK(G.rt);
+  b.firstChild.style.width = (k*100).toFixed(1)+'%'; b.className = 'sl-spd' + (G.rt < FAST ? ' fast' : k > 0.4 ? ' mid' : ' slow');
+  b.lastChild.textContent = (G.rt < FAST ? '⚡神速 ' : '⚡ ') + G.rt.toFixed(1) + 's'; }
+function mult(){ return Math.min(3, 1 + 0.5*Math.floor(G.combo/3)); }
+
+/* ---------- 回合 ---------- */
+function nextRound(){
+  G.round++;
+  if(G.round >= G.items.length || G.lives <= 0){ finish(); return; }
+  var it = G.items[G.round]; G.cur = it; G.state = 'fly'; G.failed = false; G.slow = 1; G.done = false;
+  G.root.querySelector('.sl-pl').innerHTML = it.label || '';
+  G.root.querySelector('.sl-pq').innerHTML = it.prompt;
+  resize(); /* 提示区高度每题不同（句子/喇叭）：重新量一下舞台，西瓜不会跑出屏幕 */
+  hud(); if(G.cfg.onRound) try{ G.cfg.onRound(it); }catch(e){}
+  /* 水果数量随回合增加：3 → 5；速度每回合加快一点 */
+  var nOpt = Math.min(it.opts.length, (G.W < 560 ? 2 : 3)), opts = shuffle(it.opts).slice(0, nOpt);
+  var all = shuffle([{html: it.answer, ok: true}].concat(opts.map(function(h){ return {html: h, ok: false}; })));
+  var gold = G.round>=2 && Math.random() < (window.__vSliceGold!=null ? window.__vSliceGold : 0.22);
+  var T = 1.6; /* 飞上来的时间（秒），之后一直漂浮，不再加速 */
+  G.rt = 0; G.top = Math.max(0, G.root.querySelector('.sl-prompt').getBoundingClientRect().bottom - G.stage.getBoundingClientRect().top) + 8;
+  var slots = shuffle(all.map(function(_, i){ return (i+0.5)/all.length; }));
+  G.fruits = all.map(function(o, i){ return makeFruit(o, i, T, slots[i], gold && o.ok); });
+}
+function makeFruit(o, i, T, slot, gold){
+  var f = el('div', 'sf c' + (i%4) + (gold ? ' gold' : '') + (o.ok ? ' ok' : ''), '<div class="sfc">'+o.html+'</div>');
+  G.layer.appendChild(f);
+  var sz = fitFruit(f, G.W, G.H), d = sz.h, fw = sz.w;
+  var W = G.W, H = G.H, ax = Math.max(d/2, Math.min(W-d/2, W*(0.12 + 0.76*slot) + rnd(-12, 12)));
+  var lo = G.top + d/2, hi = Math.max(lo, H - d/2 - 6), apex = lo + (hi-lo)*rnd(0.15, 0.85);
+  var x0 = Math.max(d/2, Math.min(W-d/2, ax + rnd(-W*0.1, W*0.1))), y0 = H + d/2 + 4, Ti = T*rnd(0.92, 1.08), h0 = y0 - apex;
+  var fr = {el: f, ok: o.ok, gold: gold, html: o.html, d: d, w: fw, r: fw/2, ry: d/2, x: x0, y: y0, vx: (ax - x0)/(Ti/2), vy: -4*h0/Ti, g: 8*h0/(Ti*Ti), fl: false, ph: rnd(0, 6.3),
+    rot: rnd(-10, 10), vr: rnd(-25, 25), delay: i*rnd(0.18, 0.32), alive: true, cut: false, bumped: false};
+  place(fr); return fr;
+}
+/* 水果大小随屏幕：手机 ~115、iPad ~165；长答案变椭圆，字缩放/换行保证完整显示 */
+var IN = 0.7, MINS = 0.6;
+function inlineTex(c){ /* 显示模式公式改成可换行的行内公式（在 = + 等处断行） */
+  if(!window.katex) return;
+  c.querySelectorAll('.katex').forEach(function(k){ var d = k.closest('.katex-display') || k, a = k.querySelector('annotation'); if(!a || !d.parentNode) return;
+    var sp = document.createElement('span'), parts = a.textContent.split(/\\text\{([^{}]*)\}/);
+    try{ parts.forEach(function(t, i){ if(!t.trim()) return; var q = document.createElement('span');
+        if(i%2){ q.textContent = t; q.className = 'sl-tx'; } else katex.render('\\displaystyle ' + t, q, {throwOnError: false}); sp.appendChild(q); });
+      d.replaceWith(sp); }catch(e){} });
+}
+function bounds(c){ var b = c.getBoundingClientRect(), l = b.left, t = b.top, r = b.right, bo = b.bottom;
+  c.querySelectorAll('.base, .sl-tx, .katex').forEach(function(e){ var q = e.getBoundingClientRect(); if(!q.width) return; l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); bo = Math.max(bo, q.bottom); });
+  return {w: r-l, h: bo-t, dx: (b.left+b.right)/2 - (l+r)/2, dy: (b.top+b.bottom)/2 - (t+bo)/2}; }
+function fitFruit(f, W, H){
+  var c = f.firstChild, m = Math.min(W, H), D = Math.max(108, Math.min(185, m*(W < 560 ? 0.3 : 0.2)));
+  var Wmax = Math.min(D*1.7, W*0.5), Hmax = D*1.35;
+  c.style.display = 'inline-block'; c.style.whiteSpace = 'nowrap'; c.style.width = ''; c.style.transform = '';
+  var B = bounds(c), cw = B.w, ch = B.h;
+  var fit = function(){ return Math.min(1, Wmax*IN/Math.max(cw, 1), Hmax*IN/Math.max(ch, 1)); }, sc = fit();
+  if(sc < MINS){ inlineTex(c); c.style.whiteSpace = 'normal'; c.style.width = Math.max(120, Wmax*IN/MINS).toFixed(0)+'px';
+    B = bounds(c); cw = B.w; ch = B.h; sc = fit();
+    if(sc < MINS){ Wmax = Math.min(D*2, W*0.62); Hmax = D*1.7; sc = fit(); } }
+  var fw = Math.min(Wmax, Math.max(D, cw*sc/IN)), fh = Math.min(Hmax, Math.max(D, ch*sc/IN));
+  f.style.width = fw.toFixed(1)+'px'; f.style.height = fh.toFixed(1)+'px'; c.style.transform = 'scale('+sc.toFixed(3)+') translate('+B.dx.toFixed(1)+'px,'+B.dy.toFixed(1)+'px)';
+  return {w: fw, h: fh, sc: sc};
+}
+/* 测试用：测量每个答案在水果里的显示 */
+function measure(list, W, H){
+  var box = el('div', 'slice'); box.style.visibility = 'hidden'; document.body.appendChild(box); var out = [];
+  list.forEach(function(html, i){ var f = el('div', 'sf c' + (i%4), '<div class="sfc">'+html+'</div>'); box.appendChild(f); fitFruit(f, W || innerWidth, H || innerHeight);
+    var fr = f.getBoundingClientRect(), ks = f.querySelectorAll('.katex, .sfc, .katex-html > .base'), k = null;
+    ks.forEach(function(e){ var r = e.getBoundingClientRect(); if(!r.width) return; k = k ? {l: Math.min(k.l, r.left), t: Math.min(k.t, r.top), r: Math.max(k.r, r.right), b: Math.max(k.b, r.bottom)} : {l: r.left, t: r.top, r: r.right, b: r.bottom}; });
+    out.push({html: html, f: [fr.left, fr.top, fr.right, fr.bottom], k: [k.l, k.t, k.r, k.b], fs: 26*parseFloat((f.firstChild.style.transform.match(/scale\(([0-9.]+)/)||[0,1])[1])}); });
+  box.remove(); return out;
+}
+function place(f){ f.el.style.transform = 'translate3d('+(f.x-f.r).toFixed(1)+'px,'+(f.y-f.ry).toFixed(1)+'px,0) rotate('+f.rot.toFixed(1)+'deg)'; }
+
+/* ---------- 输入：指针/触摸刀光 ---------- */
+function bindInput(){
+  var s = G.stage, pos = function(e){ var r = s.getBoundingClientRect(); return {x: e.clientX - r.left, y: e.clientY - r.top, t: now()}; };
+  s.addEventListener('pointerdown', function(e){ if(!G || G.state==='end') return; G.ptr = pos(e); G.trail.push(G.ptr); try{ s.setPointerCapture(e.pointerId); }catch(_){} e.preventDefault(); });
+  s.addEventListener('pointermove', function(e){ if(!G || !G.ptr) return; var p = pos(e), q = G.ptr; G.ptr = p; G.trail.push(p); swipe(q, p); e.preventDefault(); });
+  var up = function(){ if(G) G.ptr = null; };
+  s.addEventListener('pointerup', up); s.addEventListener('pointercancel', up); s.addEventListener('pointerleave', up);
+  /* iPad：禁止滑动时页面滚动 / 回弹 */
+  G.root.addEventListener('touchmove', function(e){ if(G && G.state==='end' && e.target.closest && e.target.closest('.sl-end')) return; e.preventDefault(); }, {passive: false});
+  G.reveal.addEventListener('click', function(){ if(G && G.state==='reveal' && G.revealReady) endReveal(); });
+}
+function swipe(a, b){
+  var dx = b.x-a.x, dy = b.y-a.y, len = Math.sqrt(dx*dx+dy*dy);
+  if(len < 6) return; /* 点一下不算切 */
+  if(b.t - G.lastWhoosh > 140 && len > 18){ G.lastWhoosh = b.t; sfx('slice'); }
+  if(G.state!=='fly') return;
+  for(var i=0;i<G.fruits.length;i++){ var f = G.fruits[i];
+    if(!f.alive || f.cut || f.delay>0) continue;
+    if(segHit(a.x, f.y+(a.y-f.y)*f.r/f.ry, b.x, f.y+(b.y-f.y)*f.r/f.ry, f.x, f.y, f.r*0.92)){ hit(f, dx/len, dy/len); if(G.state!=='fly') return; }
+  }
+}
+function hit(f, ux, uy){
+  if(f.ok){
+    f.cut = true; f.alive = false; splitFruit(f, ux, uy); juice(f.x, f.y, f.gold ? 46 : 30);
+    if(!G.failed){
+      G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.correct++; if(f.gold) G.gold++;
+      var sp = speedK(G.rt), pts = Math.round((50 + 100*sp)*mult()*(f.gold?2:1)); G.score += pts; G.times.push(G.rt);
+      floatText(f.x, f.y - f.r, '+'+pts + ' ⚡' + (G.rt < FAST ? '神速' : '') + (f.gold ? ' 金果！' : ''), (f.gold ? 'gold ' : '') + 'spd');
+      sfx('chime', {bonus: f.gold || G.combo>=3});
+    } else sfx('chime');
+    G.log.push({round: G.round, res: G.failed ? 'late' : 'ok', gold: f.gold});
+    hud(); startReveal(f, G.failed ? 'learn' : 'ok');
+  } else {
+    if(f.bumped) return; f.bumped = true;
+    /* 轻轻弹开 + 抖动；正确的那个发光；慢动作给孩子看清 */
+    f.vy = (f.fl ? 0 : Math.min(f.vy, 0)) + uy*220 - 60; f.vx += ux*220; f.vr += uy*80; f.el.classList.add('bump');
+    G.shake = 0.32;
+    if(!G.failed){ G.failed = true; G.wrong++; G.combo = 0; loseLife(); addWeak(); G.log.push({round: G.round, res: 'wrong'}); }
+    G.slow = 0.45; G.fruits.forEach(function(x){ if(x.ok) x.el.classList.add('hint'); });
+    /* 不切也没关系：5 秒后自动揭晓正确答案（不再扣分） */
+    clearTimeout(G.t4); G.t4 = setTimeout(function(){ if(!G || G.state!=='fly' || !G.failed) return; for(var i=0;i<G.fruits.length;i++){ var x = G.fruits[i]; if(x.ok && x.alive && !x.cut){ hit(x, 1, 0); return; } } }, window.__vSliceReveal || 5000);
+    sfx('soft'); hud();
+  }
+}
+function loseLife(){ G.lives = Math.max(0, G.lives-1); var h = G.root.querySelector('.sl-hearts'); h.classList.remove('hurt'); void h.offsetWidth; h.classList.add('hurt'); }
+function addWeak(){ var it = G.cur; if(G.weak.indexOf(it)<0) G.weak.push(it); if(G.cfg.onWeak) try{ G.cfg.onWeak(it); }catch(e){} }
+function splitFruit(f, ux, uy){
+  var w = f.w, h = f.d, nx = -uy, ny = ux;
+  [1, -1].forEach(function(side){
+    var e = f.el.cloneNode(true); e.classList.add('half'); e.classList.remove('hint');
+    e.style.clipPath = e.style.webkitClipPath = halfPoly(w, h, ux, uy, side);
+    G.layer.appendChild(e);
+    G.debris.push({el: e, r: f.r, ry: f.ry, x: f.x, y: f.y, vx: f.vx*0.3 + side*nx*160, vy: Math.min(f.vy, 0)*0.3 + side*ny*160 - 60, g: 900, rot: f.rot, vr: side*140, life: 1.1});
+  });
+  f.el.remove();
+}
+/* ---------- 粒子 ---------- */
+function juice(x, y, n){
+  for(var i=0;i<n;i++){ var a = Math.random()*Math.PI*2, v = rnd(80, 360);
+    G.parts.push({x: x, y: y, vx: Math.cos(a)*v, vy: Math.sin(a)*v - 120, g: 700, life: rnd(0.45, 0.8), t: 0, s: rnd(2.5, 6), c: G.colors[i%G.colors.length]}); }
+}
+function floatText(x, y, txt, cls){
+  var e = el('div', 'sl-ft ' + (cls||''), txt); e.style.left = x+'px'; e.style.top = y+'px'; G.flt.appendChild(e);
+  setTimeout(function(){ e.remove(); }, 1100);
+}
+/* ---------- 大卡揭晓：粒子汇聚成大公式 ---------- */
+function startReveal(f, kind){
+  G.state = 'reveal'; G.revealReady = false;
+  var it = G.cur; G.seen.push({item: it, kind: kind});
+  /* 其它水果化成光点消散 */
+  G.fruits.forEach(function(x){ if(x.alive){ x.alive = false; x.el.classList.add('fade'); juice(x.x, x.y, 6); var e = x.el; setTimeout(function(){ e.remove(); }, 400); } });
+  var R = G.reveal; R.className = 'sl-reveal ' + kind; R.innerHTML = '<div class="sl-big">' + (kind==='miss' ? '<div class="sl-tag">记住它 👀</div>' : kind==='learn' ? '<div class="sl-tag">再看一眼，记牢 💪</div>' : '') + it.reveal + '</div>';
+  (function(){ var bg = R.querySelector('.sl-big'); if(!bg) return; var maxW = Math.min(window.innerWidth*0.94, 640), fs = 100;
+    bg.style.maxWidth = maxW + 'px'; bg.style.boxSizing = 'border-box';
+    for(var i=0;i<12 && (bg.scrollWidth > maxW + 1 || bg.offsetHeight > window.innerHeight*0.9);i++){ fs -= 7; bg.style.fontSize = fs + '%'; }
+  })();
+  var big = R.firstChild, br = big.getBoundingClientRect(), sr = G.stage.getBoundingClientRect();
+  var bx = br.left - sr.left, by = br.top - sr.top, bw = br.width, bh = br.height;
+  var sx = f ? f.x : G.W/2, sy = f ? f.y : G.H*0.85, N = kind==='ok' ? 90 : 50;
+  for(var i=0;i<N;i++){
+    var edge = Math.random() < 0.6, tx, ty;
+    if(edge){ var p = Math.random()*2*(bw+bh); if(p<bw){ tx = bx+p; ty = by; } else if(p<bw+bh){ tx = bx+bw; ty = by+p-bw; } else if(p<2*bw+bh){ tx = bx+(p-bw-bh); ty = by+bh; } else { tx = bx; ty = by+(p-2*bw-bh); } }
+    else { tx = bx + Math.random()*bw; ty = by + Math.random()*bh; }
+    G.parts.push({x: sx + rnd(-20, 20), y: sy + rnd(-20, 20), x0: sx, y0: sy, tx: tx, ty: ty, t: -i*0.004, dur: rnd(0.5, 0.7), life: 1.3, s: rnd(2.5, 5), c: G.colors[i%G.colors.length], fly: true});
+  }
+  G.t1 = setTimeout(function(){ if(!G) return; R.classList.add('show'); G.revealReady = true; if(kind==='ok' && G.cur && G.combo>0 && G.combo%5===0) sfx('levelup'); }, 560);
+  G.t2 = setTimeout(function(){ if(G) endReveal(); }, kind==='ok' ? 2100 : 2400);
+}
+function endReveal(){
+  if(!G || G.state!=='reveal') return; clearTimeout(G.t2); clearTimeout(G.t4);
+  G.state = 'gap'; G.reveal.classList.add('out');
+  G.t3 = setTimeout(function(){ if(!G) return; G.reveal.className = 'sl-reveal'; G.reveal.innerHTML = ''; clearFruits(); nextRound(); }, 260);
+}
+function clearFruits(){ G.fruits.forEach(function(x){ if(x.el.parentNode) x.el.remove(); }); G.fruits = []; }
+
+/* ---------- 主循环 ---------- */
+function loop(t){
+  if(!G) return;
+  var dt = Math.min(0.05, (t - G.last)/1000); G.last = t;
+  var ts = (window.__vSliceTS || G.ts) * G.slow, d = dt*ts;
+  if(G.state==='fly'){
+    var anyAlive = false;
+    G.fruits.forEach(function(f){
+      if(!f.alive) return;
+      if(f.delay>0){ f.delay -= d; return; } anyAlive = true;
+      if(!f.fl){ f.vy += f.g*d; if(f.vy >= 0){ f.fl = true; f.vx = rnd(-28, 28); f.vy = rnd(-18, 18); f.vr *= 0.3; } }
+      else { /* 漂浮：轻轻晃动、阻尼回到慢速漂移 */
+        f.ph += d*1.6; f.vy += Math.sin(f.ph)*14*d;
+        var sp = Math.sqrt(f.vx*f.vx + f.vy*f.vy); if(sp > 40){ var k = Math.max(40/sp, 1 - 2.2*d); f.vx *= k; f.vy *= k; }
+        f.vr *= (1 - 0.8*d);
+      }
+      f.x += f.vx*d; f.y += f.vy*d; f.rot += f.vr*d;
+      if(f.x < f.r){ f.x = f.r; f.vx = Math.abs(f.vx); } if(f.x > G.W-f.r){ f.x = G.W-f.r; f.vx = -Math.abs(f.vx); }
+      if(f.fl){ if(f.y < G.top + f.ry){ f.y = G.top + f.ry; f.vy = Math.abs(f.vy); } if(f.y > G.H - f.ry){ f.y = G.H - f.ry; f.vy = -Math.abs(f.vy); } }
+    });
+    /* 互相避让 */
+    var L = G.fruits.filter(function(f){ return f.alive && f.delay<=0 && f.fl; });
+    for(var i=0;i<L.length;i++) for(var j=i+1;j<L.length;j++){ var a = L[i], b = L[j], dx = b.x-a.x, dy = b.y-a.y, dd = Math.sqrt(dx*dx+dy*dy) || 0.01, m = (Math.abs(dx) > Math.abs(dy) ? a.r + b.r : a.ry + b.ry) + 6 - dd;
+      if(m > 0){ var ux = dx/dd, uy = dy/dd; a.x -= ux*m/2; a.y -= uy*m/2; b.x += ux*m/2; b.y += uy*m/2; a.vx -= ux*20*d; b.vx += ux*20*d; a.vy -= uy*20*d; b.vy += uy*20*d; } }
+    G.fruits.forEach(function(f){ if(!f.alive || f.delay>0) return; if(f.fl){ f.x = Math.max(f.r, Math.min(G.W-f.r, f.x)); f.y = Math.max(Math.min(G.top + f.ry, G.H - f.ry), Math.min(G.H-f.ry, f.y)); } place(f); });
+    G.rt += dt*(window.__vSliceTS || 1); spdBar();
+  }
+  G.debris = G.debris.filter(function(b){ b.life -= dt; b.vy += b.g*dt; b.x += b.vx*dt; b.y += b.vy*dt; b.rot += b.vr*dt;
+    b.el.style.transform = 'translate3d('+(b.x-b.r).toFixed(1)+'px,'+(b.y-b.ry).toFixed(1)+'px,0) rotate('+b.rot.toFixed(1)+'deg)'; b.el.style.opacity = Math.max(0, Math.min(1, b.life*1.6));
+    if(b.life<=0 || b.y - b.r > G.H + 40){ b.el.remove(); return false; } return true; });
+  if(G.shake>0){ G.shake -= dt; var a = G.shake*22; G.stage.style.transform = 'translate('+(Math.sin(t/18)*a).toFixed(1)+'px,0)'; if(G.shake<=0) G.stage.style.transform = ''; }
+  draw(dt, t);
+  if(G && G.state!=='end') G.raf = requestAnimationFrame(loop);
+}
+function draw(dt, t){
+  var x = G.ctx; x.clearRect(0, 0, G.W, G.H);
+  /* 粒子 */
+  G.parts = G.parts.filter(function(p){
+    p.t += dt;
+    if(p.fly){ if(p.t<0) return true; var k = Math.min(1, p.t/p.dur), e = k<0.5 ? 2*k*k : 1-Math.pow(-2*k+2, 2)/2;
+      p.x = p.x0 + (p.tx-p.x0)*e + Math.sin(k*Math.PI)*30*Math.sin(p.tx); p.y = p.y0 + (p.ty-p.y0)*e - Math.sin(k*Math.PI)*60;
+      var al = k<1 ? 1 : Math.max(0, 1 - (p.t-p.dur)/0.45); if(al<=0) return false;
+      x.globalAlpha = al; x.fillStyle = p.c; x.beginPath(); x.arc(p.x, p.y, p.s*(k<1?1:1+(p.t-p.dur)*3), 0, 7); x.fill(); return true; }
+    p.vy += p.g*dt; p.x += p.vx*dt; p.y += p.vy*dt; var al2 = 1 - p.t/p.life; if(al2<=0) return false;
+    x.globalAlpha = al2; x.fillStyle = p.c; x.beginPath(); x.arc(p.x, p.y, p.s, 0, 7); x.fill(); return true;
+  });
+  /* 刀光：最近 160ms 的轨迹，越新越粗 */
+  var tn = now(); G.trail = G.trail.filter(function(p){ return tn - p.t < 160; });
+  if(G.trail.length>1){
+    x.lineCap = 'round'; x.strokeStyle = G.trailCol;
+    for(var i=1;i<G.trail.length;i++){ var a = G.trail[i-1], b = G.trail[i], k = 1 - (tn - b.t)/160;
+      x.globalAlpha = 0.25 + 0.6*k; x.lineWidth = 2 + 9*k; x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); }
+  }
+  x.globalAlpha = 1;
+}
+/* ---------- 结束 ---------- */
+function finish(){
+  G.state = 'end'; clearFruits(); cancelAnimationFrame(G.raf); G.stage.style.transform = '';
+  var res = {score: G.score, correct: G.correct, wrong: G.wrong, miss: G.miss, gold: G.gold, rounds: G.round, total: G.items.length,
+    lives: G.lives, maxCombo: G.maxCombo, avgT: G.times.length ? G.times.reduce(function(a,b){return a+b;},0)/G.times.length : null, fastT: G.times.length ? Math.min.apply(null, G.times) : null, fastN: G.times.filter(function(x){ return x < FAST; }).length, seen: G.seen.map(function(s){ return s.item; }), weak: G.weak.slice(), log: G.log.slice()};
+  var info = G.cfg.onEnd ? G.cfg.onEnd(res) : {};
+  var root = G.root, acc = res.correct/Math.max(1, res.rounds);
+  var stars = info.stars!=null ? info.stars : 0;
+  var seenU = [], seenH = {}; res.seen.forEach(function(it){ if(!seenH[it.reveal]){ seenH[it.reveal] = 1; seenU.push(it); } });
+  var weakH = {}; res.weak.forEach(function(it){ weakH[it.reveal] = 1; });
+  root.querySelector('.sl-prompt').style.display = 'none';
+  G.stage.innerHTML = '<div class="sl-end"><div class="sl-stars">' + [1,2,3].map(function(i){ return '<span class="'+(i<=stars?'on':'')+'">★</span>'; }).join('') + '</div>'
+    + '<div class="sl-et">' + (info.title || '') + '</div>'
+    + '<div class="sl-nums"><div><b>' + res.score + '</b><span>得分' + (info.newBest ? ' · 新纪录！' : '') + '</span></div><div><b>' + (info.best||res.score) + '</b><span>最高分</span></div><div><b>' + res.correct + '/' + res.rounds + '</b><span>切对</span></div><div><b>' + res.maxCombo + '</b><span>最大连击</span></div><div><b>' + (res.avgT!=null ? res.avgT.toFixed(1)+'s' : '–') + '</b><span>平均用时</span></div><div><b>' + (res.fastT!=null ? res.fastT.toFixed(1)+'s' : '–') + '</b><span>最快 ⚡</span></div></div>'
+    + (info.pointsHtml ? '<div class="sl-pts">' + info.pointsHtml + '</div>' : '')
+    + (res.weak.length ? '<div class="sl-weak">🌱 ' + res.weak.length + ' 个没切对的已加入「今日巩固」，回到首页点 🔁 复习 再练一遍</div>' : '')
+    + '<div class="sl-rech">这一局切出的单词卡</div><div class="sl-recap">' + seenU.map(function(it){ return '<div class="sl-rc ' + (weakH[it.reveal] ? 'weak' : '') + '">' + it.reveal + '</div>'; }).join('') + '</div>'
+    + '<div class="sl-btns"><button class="big green grow sl-again">🍉 再来一局' + (info.nextBonus ? '（奖励×' + info.nextBonus + '）' : '') + '</button><button class="big gray grow sl-back">返回</button></div></div>';
+  var c = G.cfg;
+  G.stage.querySelector('.sl-again').addEventListener('click', function(){ close(); if(c.onReplay) c.onReplay(); });
+  G.stage.querySelector('.sl-back').addEventListener('click', function(){ close(); if(c.onQuit) c.onQuit(); });
+  G.stage.classList.add('ended');
+  sfx(stars>=2 ? 'fanfare' : 'chime', {bonus: stars===3});
+}
+return { start: start, close: close, active: function(){ return !!G; },
+  /* 测试/调试用 */
+  _g: function(){ return G; },
+  state: function(){ if(!G) return null; var sr = G.stage.getBoundingClientRect();
+    return {rt: G.rt, times: G.times.slice(), top: G.top, H: G.H, W: G.W, phase: G.state, round: G.round, lives: G.lives, score: G.score, combo: G.combo, correct: G.correct, wrong: G.wrong, miss: G.miss, failed: G.failed,
+      fruits: G.fruits.filter(function(f){ return f.alive && f.delay<=0; }).map(function(f){ return {x: f.x + sr.left, y: f.y + sr.top, r: f.r, ry: f.ry, fl: f.fl, ok: f.ok, gold: f.gold, vy: f.vy}; })}; },
+  halfPoly: halfPoly, segHit: segHit, measure: measure, fitFruit: fitFruit, speedK: speedK, FAST: FAST, SLOWT: SLOWT,
+  mult: function(c){ return Math.min(3, 1 + 0.5*Math.floor(c/3)); },
+  /* 测试用：直接切某个水果（ok=true 切正确的，false 切一个错的） */
+  _cut: function(ok){ if(!G || G.state!=='fly') return false; for(var i=0;i<G.fruits.length;i++){ var f = G.fruits[i]; if(f.alive && !f.cut && f.ok===ok && !(f.bumped && !ok)){ f.delay = 0; hit(f, 1, 0); return true; } } return false; },
+  _skip: function(){ if(G && G.state==='reveal'){ G.revealReady = true; endReveal(); } } };
+})();
+if(typeof module!=='undefined') module.exports = VSlice;
+
 'use strict';
 /* ---- word data: built-in (embedded) + custom sections imported by the user (kept in S.custom) ---- */
 const WORDS = [], SECTIONS = [], TIPS = [], ALL_IDS = [], BYID = {}, SECBY = {};
@@ -940,7 +1348,7 @@ function defaultState() {
   const sec = {}; SECTIONS.forEach(s => sec[s.id] = true);
   return { v: 1, serialClean: 1, epoch: 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), words: {}, xp: 0, coins: 0, bestCombo: 0, totalRight: 0, totalWrong: 0, killed: 0, days: {},
     avatar: '🧑‍🎓', owned: ['🧑‍🎓'], pick: null, lastPick: null, custom: emptyCustom(), lastBackup: 0,
-    studyTime: {}, studyFlags: {}, studyArchive: 0,
+    studyTime: {}, studyFlags: {}, studyArchive: 0, slice: { best: 0, medals: 0, plays: 0, days: {} },
     settings: { dailyNew: 15, sections: sec, optional: true, penalty: 'down2', autoSpeak: true, rate: 0.85, sfx: true, sfxVol: 0.6, theme: initialTheme() }, created: clock() };
 }
 /* ---- themes: 护眼 (eye, default) / 护眼夜间 (night) / 经典 (classic = original purple). prefers-color-scheme only seeds the first choice. */
@@ -1017,6 +1425,12 @@ function cleanCustomSerials(s) {
   return n;
 }
 let SERIAL_FIXED = 0;
+function cleanSlice(x) {
+  const o = isObj(x) ? x : {}, n = v => { v = +v; return isFinite(v) && v >= 0 ? Math.floor(v) : 0; };
+  const days = {}; if (isObj(o.days)) for (const k in o.days) if (/^\d{4}-\d\d-\d\d$/.test(k) && isObj(o.days[k])) days[k] = { rounds: n(o.days[k].rounds), pts: n(o.days[k].pts) };
+  const ks = Object.keys(days).sort(); while (ks.length > 60) delete days[ks.shift()];   // keep it small
+  return { best: n(o.best), medals: n(o.medals), plays: n(o.plays), days };
+}
 function migrate(s) {
   const needSerial = s.serialClean !== 1;
   if (!s.epoch) s.epoch = 'legacy';   // saves from builds before 2026-10-19: same epoch in every tab
@@ -1030,6 +1444,7 @@ function migrate(s) {
   ['xp', 'coins', 'bestCombo', 'totalRight', 'totalWrong', 'killed', 'lastBackup', 'studyArchive'].forEach(k => { const n = +s[k]; s[k] = isFinite(n) && n >= 0 ? n : 0; });
   if (!isFinite(+s.created)) s.created = d.created;
   ['words', 'days', 'studyTime', 'studyFlags'].forEach(k => { if (!isObj(s[k])) s[k] = {}; });
+  s.slice = cleanSlice(s.slice);
   for (const id in s.words) { const r = s.words[id]; if (!isObj(r)) { delete s.words[id]; continue; } r.s = +r.s || 0; if (r.s >= 1 && r.s <= STAGES && !isFinite(+r.due)) r.due = 0; }
   for (const k in s.days) if (!isObj(s.days[k])) delete s.days[k];
   if (!Array.isArray(s.owned)) s.owned = d.owned.slice(); s.owned = s.owned.map(str);
@@ -1100,6 +1515,9 @@ function mergeStates(a, b) {
   ['xp', 'totalRight', 'totalWrong', 'killed', 'bestCombo', 'studyArchive', 'lastBackup', 'rev', 'ts'].forEach(k => out[k] = Math.max(+a[k] || 0, +b[k] || 0));
   out.owned = [...new Set([].concat(Array.isArray(a.owned) ? a.owned : [], Array.isArray(b.owned) ? b.owned : []))];
   const T = Object.assign({}, isObj(a.studyTime) ? a.studyTime : {}); for (const k in (isObj(b.studyTime) ? b.studyTime : {})) T[k] = Math.max(+T[k] || 0, +b.studyTime[k] || 0); out.studyTime = T;
+  { const sa = cleanSlice(a.slice), sb = cleanSlice(b.slice), dd = Object.assign({}, sa.days);
+    for (const k in sb.days) dd[k] = dd[k] ? { rounds: Math.max(dd[k].rounds, sb.days[k].rounds), pts: Math.max(dd[k].pts, sb.days[k].pts) } : sb.days[k];
+    out.slice = { best: Math.max(sa.best, sb.best), medals: Math.max(sa.medals, sb.medals), plays: Math.max(sa.plays, sb.plays), days: dd }; }
   out.studyFlags = Object.assign({}, isObj(a.studyFlags) ? a.studyFlags : {}, isObj(b.studyFlags) ? b.studyFlags : {});
   const del = Object.assign({}, isObj(a.delSecs) ? a.delSecs : {}); for (const k in (isObj(b.delSecs) ? b.delSecs : {})) del[k] = Math.max(+del[k] || 0, +b.delSecs[k] || 0); out.delSecs = del;
   const ca = isObj(a.custom) ? a.custom : {}, cb = isObj(b.custom) ? b.custom : {}, cl = later === b ? cb : ca, co = later === b ? ca : cb;
@@ -1526,15 +1944,35 @@ let RECOG = null, RECOG_LISTEN = false;
    kill = pop + rising sparkle chime when the monster is defeated / mastered
    iOS: the AudioContext is created/resumed inside the first user gesture (unlock). Never touches speechSynthesis. */
 const Sfx = {
-  ctx: null, noise: null, calls: [],
+  ctx: null, noise: null, calls: [], rebuilt: 0, lastCT: -1, lastWall: 0,
   AC() { return window.AudioContext || window.webkitAudioContext || null; },
+  session() { try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch (e) { } },   // iOS 17+: play even with the mute switch
+  rebuild() {   // iOS sometimes leaves a context "running" with a frozen clock, or stuck after interruptions → start over
+    try { if (this.ctx && this.ctx.close) { const p = this.ctx.close(); if (p && p.catch) p.catch(() => { }); } } catch (e) { }
+    this.ctx = null; this.noise = null; this._primed = false; this.lastCT = -1; this.rebuilt++;
+  },
+  // called on every tap / pointerdown (a user gesture, so resume() is allowed on iOS)
+  check() {
+    try {
+      const c = this.ctx; if (!c) return this.unlock();
+      if (c.state === 'closed') { this.rebuild(); return this.unlock(); }
+      const wall = (window.performance && performance.now()) || Date.now();
+      if (c.state === 'running' && this.lastCT >= 0 && wall - this.lastWall > 250 && c.currentTime === this.lastCT) { this.rebuild(); return this.unlock(); }
+      if (c.state === 'suspended' || c.state === 'interrupted') {
+        const ct0 = c.currentTime; try { const p = c.resume(); if (p && p.catch) p.catch(() => { }); } catch (e) { }
+        setTimeout(() => { if (this.ctx === c && (c.state !== 'running' || c.currentTime === ct0)) this.rebuild(); }, 300);   // resume didn't take → rebuild next tap
+      }
+      this.lastCT = c.currentTime; this.lastWall = wall; return true;
+    } catch (e) { return false; }
+  },
   unlock() {
     try {
       const AC = this.AC(); if (!AC) return false;
+      this.session();
       if (!this.ctx) this.ctx = new AC();
-      if (this.ctx.state === 'suspended' && this.ctx.resume) { const p = this.ctx.resume(); if (p && p.catch) p.catch(() => { }); }
+      if ((this.ctx.state === 'suspended' || this.ctx.state === 'interrupted') && this.ctx.resume) { const p = this.ctx.resume(); if (p && p.catch) p.catch(() => { }); }
       if (!this._primed) {   // a silent 1-sample buffer finishes the iOS unlock
-        const b = this.ctx.createBuffer(1, 1, 22050), src = this.ctx.createBufferSource(); src.buffer = b; src.connect(this.ctx.destination); src.start(0); this._primed = true;
+        const b = this.ctx.createBuffer(1, 1, 22050), src = this.ctx.createBufferSource(); src.buffer = b; src.connect(this.ctx.destination); src.onended = () => { try { src.disconnect(); } catch (e) { } }; src.start(0); this._primed = true;
       }
       return true;
     } catch (e) { return false; }
@@ -1544,7 +1982,7 @@ const Sfx = {
     if (this.vol() <= 0 || RECOG_LISTEN) return null;   // toggle off, or mic is listening
     if (!this.ctx && !this.unlock()) return null;
     const c = this.ctx; if (!c || c.state === 'closed') return null;
-    if (c.state === 'suspended' && c.resume) { try { const p = c.resume(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
+    if ((c.state === 'suspended' || c.state === 'interrupted') && c.resume) { try { const p = c.resume(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
     return c;
   },
   noiseBuf(c) {
@@ -1557,20 +1995,20 @@ const Sfx = {
     const o = c.createOscillator(), g = c.createGain(); o.type = type;
     o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.7);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.02);
+    o.connect(g); g.connect(out); o.onended = () => { try { o.disconnect(); g.disconnect(); } catch (e) { } }; o.start(t); o.stop(t + dur + 0.02);
   },
   pop(c, out, t, pitch) {
     const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
     src.buffer = this.noiseBuf(c); bp.type = 'bandpass'; bp.frequency.value = 1800 * pitch; bp.Q.value = 1.2;
     g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-    src.connect(bp); bp.connect(g); g.connect(out); src.start(t); src.stop(t + 0.06);
+    src.connect(bp); bp.connect(g); g.connect(out); src.onended = () => { try { src.disconnect(); bp.disconnect(); g.disconnect(); } catch (e) { } }; src.start(t); src.stop(t + 0.06);
     this.tone(c, out, t + 0.005, 'triangle', 520 * pitch, 260 * pitch, 0.12, 0.6);   // squishy boop
   },
   play(kind, combo) {
     this.calls.push({ kind, combo: combo || 0 });
     const c = this.ready(); if (!c) return false;
     try {
-      const out = c.createGain(); out.gain.value = this.vol(); out.connect(c.destination);
+      const out = c.createGain(); out.gain.value = this.vol(); out.connect(c.destination); setTimeout(() => { try { out.disconnect(); } catch (e) { } }, 1500);   // all voices end within ~0.5 s
       const t = c.currentTime + 0.01, pitch = Math.pow(2, Math.min(Math.max(0, (combo || 1) - 1), 8) / 12);   // +1 semitone per combo, cap +8
       if (kind === 'kill') {
         this.pop(c, out, t, 1);
@@ -1583,7 +2021,7 @@ const Sfx = {
     } catch (e) { return false; }
   }
 };
-['pointerdown', 'touchend', 'keydown', 'click'].forEach(ev => document.addEventListener(ev, () => { if (!Sfx._primed) Sfx.unlock(); }, { passive: true, capture: true }));
+['pointerdown', 'touchend', 'keydown', 'click'].forEach(ev => document.addEventListener(ev, () => { if (!Sfx._primed) Sfx.unlock(); else Sfx.check(); }, { passive: true, capture: true }));
 // mic problems never leave a card stuck: clear message + 🔁 重试 / ⌨️ 打字代替 / ⏭ 跳过 (no penalty, re-asked as a choice question)
 const MIC_MSG = {
   'not-allowed': '麦克风没有权限：请在「设置 › Safari › 麦克风」里允许，或点「⌨️ 打字代替」',
@@ -1870,7 +2308,9 @@ function renderHome() {
   const revBtn = `<button class="big" data-act="startReview" ${due ? '' : 'disabled aria-disabled="true"'}>🔁 复习<small>${due ? `复习 ${due} 个` : `暂无待复习${nd < Infinity ? ' · 下一批 ' + fmtDur(nd - clock()) : ''}`}</small></button>`;
   const newBtn = goalMet ? `<button class="big green" data-act="more">✨ 再学 5 个<small>今日目标已完成</small></button>`
     : `<button class="big green" data-act="startNew" ${left ? '' : 'disabled aria-disabled="true"'}>✨ 背新单词<small>${left ? `新词 ${left} 个` : '所选关卡已学完'}</small></button>`;
-  let startBtn = `<div class="row startrow">${revBtn}${newBtn}</div>${due && left ? `<div class="muted center hintrev">💡 还有 ${due} 个待复习，背完新词也记得复习哦</div>` : ''}`;
+  const sliceN = slicePool().length;
+  const sliceBtn = `<button class="big blue slicecta" data-act="slice" ${sliceN ? '' : 'aria-disabled="true"'}><span class="de">🍉</span><span>切西瓜复习游戏<small>${sliceN ? `用今天练过的单词 · 10 题${(S.slice.days[dayKey(clock())] || {}).rounds ? ' · 今天第 ' + ((S.slice.days[dayKey(clock())].rounds) + 1) + ' 局' : ''}` : '先背几个单词再来玩'}</small></span></button>`;
+  let startBtn = `<div class="row startrow">${revBtn}${newBtn}</div>${sliceBtn}${due && left ? `<div class="muted center hintrev">💡 还有 ${due} 个待复习，背完新词也记得复习哦</div>` : ''}`;
   if (due === 0 && left === 0) {
     if (sug) startBtn += `<div class="card center"><div style="font-size:46px">🎉</div><b>你选的关卡新词都学完啦！</b><div class="muted">推荐下一关：${bossOf(sug.id)} ${esc(sug.name)}（还剩 ${newList([sug.id]).length} 个新词）</div>
      <button class="big blue" data-act="pickgo" data-sec="${esc(sug.id)}">➡️ 今天学 ${esc(sug.section)}</button></div>`;
@@ -2385,6 +2825,7 @@ document.addEventListener('change', e => {
 const ACT = {
   backup: () => renderBackup(),
   privateTipClose: () => { try { localStorage.setItem('vocab8a_private_tip', '1'); } catch (e) { } $('#banner').style.display = 'none'; },
+  slice: () => startSlice(),
   bannerClose: () => { try { localStorage.setItem('vocab8a_banner_seen', '1'); } catch (e) { } $('#banner').style.display = 'none'; },
   importWords: () => { const el = $('#wordfile'); if (!el) return; el.value = ''; el.click(); },
   pvCancel: () => { PREVIEW = null; renderMap(); },
@@ -2514,7 +2955,75 @@ document.addEventListener('visibilitychange', () => {
 ['click', 'keydown', 'touchstart', 'pointerdown'].forEach(ev => document.addEventListener(ev, () => Study.touch(), { passive: true }));
 
 /* test hooks */
-window.VG = { WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
+/* ================= 🍉 切西瓜复习游戏 =================
+   Practice only: never advances Ebbinghaus stages. A wrong slice puts the word into 今日巩固 (due now → shows up in 🔁 复习). */
+const SLICE_N = 10;
+function slicePool(n) {
+  n = n || SLICE_N; const today = dayKey(clock()), seen = new Set(), out = [];
+  const add = list => { for (const w of list) { if (out.length >= n) break; if (!seen.has(w.id)) { seen.add(w.id); out.push(w); } } };
+  const R = w => S.words[w.id];
+  const learnt = WORDS.filter(w => R(w) && (R(w).s >= 1 || R(w).learned));
+  add(shuffle(learnt.filter(w => (R(w).last && dayKey(R(w).last) === today) || (R(w).learned && dayKey(R(w).learned) === today))));
+  if (out.length < 4 || out.length < n) add(learnt.filter(w => (R(w).wrong || 0) > 0).sort((a, b) => (R(b).lw || 0) - (R(a).lw || 0) || (R(b).wrong || 0) - (R(a).wrong || 0)));
+  if (out.length < n) add(shuffle(learnt));
+  return out;
+}
+function sliceBonus(roundsBefore) { return Math.min(2, Math.round((1 + 0.1 * (roundsBefore || 0)) * 100) / 100); }
+function sliceStars(correct, total, lives) { const a = correct / Math.max(1, total); return a >= 0.9 && lives > 0 ? 3 : a >= 0.7 ? 2 : a >= 0.4 ? 1 : 0; }
+function sliceSentence(w) {
+  if (w.type === 'sentence') return null;
+  const re = new RegExp('\\b' + w.en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+') + '\\b', 'i');
+  const s = WORDS.find(x => x.type === 'sentence' && x.id !== w.id && re.test(x.en));
+  return s ? { html: esc(s.en).replace(re, '<b>_____</b>'), cn: s.cn } : null;
+}
+function sliceItem(w) {
+  const sent = sliceSentence(w), kinds = ['cn', 'cn'];
+  if (TTS) kinds.push('say'); if (sent) kinds.push('sent');
+  const k = window.__vSliceKind || rnd(kinds);
+  let prompt, label;
+  if (k === 'say' && TTS) { label = '听发音，切出这个单词'; prompt = `<button class="speak sl-say" aria-label="再听一遍" data-act="sayid" data-id="${esc(w.id)}">🔊</button> <span class="sl-cn">听不清？点喇叭再听</span>`; }
+  else if (k === 'sent' && sent) { label = '把句子补完整'; prompt = `${sent.html}<div class="sl-cn">${esc(sent.cn)}</div>`; }
+  else { label = '看中文，切出英文'; prompt = esc(w.cn) + (w.pos ? ` <span class="sl-cn">${esc(w.pos)}</span>` : ''); }
+  return { id: w.id, kind: k === 'say' && !TTS ? 'cn' : k, label, prompt, answer: esc(displayEn(w)), opts: distractors(w, 'en', 3).map(x => esc(x.replace(/\s*\.\.\.$/, ''))),
+    reveal: `<div class="sl-bf${w.en.length > 14 ? ' sm' : ''}">${esc(displayEn(w))}</div>${w.phonetic ? `<div class="sl-bp">${esc(w.phonetic)}</div>` : ''}<div class="sl-bs">${esc(w.cn)}${w.pos ? ' · ' + esc(w.pos) : ''}</div>` };
+}
+function sliceWeak(id) {   // 今日巩固: due now (stage unchanged; mastered words come back to the last review stage)
+  const r = S.words[id]; if (!r) return;
+  const now = clock(); if (r.s > STAGES) { r.s = STAGES; r.mastered = 0; }
+  if (!(r.due <= now)) r.due = now; r.cons = dayKey(now); save();
+}
+const SLICE_SFX = { slice: ['hit', 1], chime: ['kill', 0], soft: ['thud', 0], levelup: ['kill', 6], fanfare: ['kill', 8] };
+function startSlice() {
+  const words = slicePool();
+  if (!words.length) { toast('先背几个单词，再来切西瓜 🍉'); return renderHome(); }
+  const items = shuffle(words).slice(0, SLICE_N).map(sliceItem);
+  while (items.length < SLICE_N && words.length) items.push(sliceItem(rnd(words)));   // small pool: repeat words
+  const today = dayKey(clock()), before = (S.slice.days[today] || {}).rounds || 0;
+  Sfx.unlock();
+  VSlice.start({ items, rounds: SLICE_N,
+    sfx: (k, o) => { const m = SLICE_SFX[k]; if (m) Sfx.play(m[0], o && o.bonus ? 6 : m[1]); },
+    onRound: it => { if (it.kind === 'say') setTimeout(() => speak(BYID[it.id].en), 250); },
+    onWeak: it => sliceWeak(it.id),
+    onEnd: res => sliceEnd(res, before),
+    onReplay: () => startSlice(),
+    onQuit: () => renderHome() });
+}
+function sliceEnd(res, before) {
+  const today = dayKey(clock()), lvBefore = levelInfo(S.xp).lv;
+  const bonus = sliceBonus(before), medal = res.correct === res.total && res.wrong === 0 && res.total > 0;
+  const pts = Math.round(res.correct * 10 * bonus), coins = Math.round(res.correct * bonus) + (medal ? 10 : 0);
+  const prevBest = S.slice.best, d = S.slice.days[today] || { rounds: 0, pts: 0 };
+  d.rounds++; d.pts += pts; S.slice.days[today] = d; S.slice.plays++; if (medal) S.slice.medals++;
+  S.slice.best = Math.max(S.slice.best, res.score); S.xp += pts; S.coins += coins;
+  markDayDone(); save(true);
+  const lv = levelInfo(S.xp).lv; if (lv > lvBefore) setTimeout(() => showOverlay('🎉', `升级啦！Lv.${lv}`, `你现在是「${titleOf(lv)}」！`), 1200);
+  const stars = sliceStars(res.correct, res.total, res.lives);
+  return { stars, best: S.slice.best, newBest: res.score > prevBest && prevBest > 0,
+    title: medal ? '🏅 全部切对！获得一枚切瓜勋章' : res.lives <= 0 ? '心用完啦，休息一下再来' : stars >= 2 ? '切得漂亮！' : '继续加油！',
+    pointsHtml: `切对 <b>${res.correct}</b> 个 → <b>+${pts}</b> XP · <b>+${coins}</b> 🪙${bonus > 1 ? `（今天第 ${before + 1} 局，奖励 ×${bonus}）` : ''}${medal ? ' · 🏅' : ''}`,
+    nextBonus: sliceBonus(before + 1) > 1 ? sliceBonus(before + 1) : 0 };
+}
+window.VG = { slicePool, sliceItem, sliceBonus, sliceStars, sliceWeak, sliceEnd, startSlice, get VSlice() { return VSlice; }, WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
   Importer, rebuildData, importItems, deleteSection, handleWordFiles, get PREVIEW() { return PREVIEW; }, exportText, importText, saveBackupFile, copyBackupCode, storageCheck, secIdFor, BUILTIN_IDS,
   dueList, todayDue, newList, newLeftToday, todayPick, setPick, pickedToday, nextUnfinished, migrate, streak, levelInfo, checkSpell, checkSpeech, fuzzyNorm, levenshtein, phraseSimilarity, speechTargets, speechSupported, get SPEECH_OK() { return SPEECH_OK; }, variants, distractors, bonusList, bonusFakes, buildQ, chooseType, startSession, submit, nextCard, ACT, today, hintText, renderHome, stopRecog,
   applyTheme, THEMES, Sfx, privateTip, mergeStates, syncFromStorage, get RECOVERED() { return RECOVERED; }, MIC_MSG, micProblem, get RECOG() { return RECOG; }, Study, inSession, sanitizeCustom, get LOAD_ERR() { return LOAD_ERR; }, studyToday, studyWeek, studyTotal, studySec, last7Days, fmtStudy, fmtStudyShort, weekKey, pruneStudyTime, checkStudyMilestones, IDLE_MS };
