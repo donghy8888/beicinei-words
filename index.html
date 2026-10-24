@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261024-120959 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261024-124126 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -1949,6 +1949,36 @@ function checkSpeech(w, heard) {
   }
   return { ok: best >= 0.85, score: best, matched: bestT };
 }
+/** How many times the target appears in one transcript (warm-up multi-speak in one final). */
+function countSpeechHits(w, heard) {
+  const h = fuzzyNorm(heard);
+  if (!h) return 0;
+  const tokens = h.split(' ').filter(Boolean);
+  const targets = speechTargets(w);
+  let best = 0;
+  for (const t of targets) {
+    if (!t) continue;
+    const T = t.split(' ').filter(Boolean);
+    if (!T.length) continue;
+    let hits = 0;
+    if (T.length === 1) {
+      const tgt = T[0];
+      for (const tok of tokens) if (tokenSim(tok, tgt) >= 0.75) hits++;
+    } else {
+      let i = 0;
+      while (i <= tokens.length - T.length) {
+        let ok = true;
+        for (let j = 0; j < T.length; j++) if (tokenSim(tokens[i + j], T[j]) < 0.75) { ok = false; break; }
+        if (ok) { hits++; i += T.length; } else i++;
+      }
+      if (!hits && checkSpeech(w, heard).ok) hits = 1;
+    }
+    if (hits > best) best = hits;
+  }
+  if (best === 0 && checkSpeech(w, heard).ok) return 1;
+  return best;
+}
+
 const SRCtor = (typeof window !== 'undefined') && (window.SpeechRecognition || window.webkitSpeechRecognition);
 function speechSupported() {
   if (!SRCtor) return false;
@@ -2068,7 +2098,7 @@ function armHeard(q, text, alts, rid) {
 }
 function idleMicStatus() {
   const st = document.getElementById('micstatus'); if (!st || !CUR || CUR.answered) return;
-  st.textContent = CUR.qtype === 'warmup' ? ('点麦克风，大声念第 ' + ((CUR.warmCount || 0) + 1) + ' 遍') : '点麦克风，用英语说出这个词';
+  st.textContent = CUR.qtype === 'warmup' ? ((CUR.warmCount ? '念对 ' + CUR.warmCount + '/3 · ' : '') + '点一次就一直听，念对 3 遍自动停') : '点麦克风，用英语说出这个词';
 }
 function stopRecog() {
   if (RECOG_TIMER) { clearTimeout(RECOG_TIMER); RECOG_TIMER = null; }
@@ -2157,9 +2187,10 @@ function startRecog() {
   }, MIC_TIMEOUT);
   try { r.start(); } catch (e) { finishListen(); micProblem(e && e.name === 'NotAllowedError' ? 'not-allowed' : 'audio-capture'); }
 }
-/* 念三遍热身：点一次麦克风后一直听，直到念对 3 遍自动停；每句话（一个完成的 final 结果）最多计 1 次。
-   iPad Safari 每句话后常会自己结束识别 → 自动续听（进度不丢）；出错时显示提示 + 一键继续。 */
-let WARM = null;   // { q, sid, restarts, user }
+/* 念三遍热身：点一次麦克风后一直听，直到念对 3 遍自动停。
+   一句里念多次（如 "annoyed annoyed annoyed"）按命中次数累加；Safari 每句后常自停 → 自动续听。 */
+let WARM = null;   // { q, sid, restarts, emptyEnds }
+const WARM_SILENCE_MS = Math.max(MIC_TIMEOUT * 4, 20000);   // kids pause between speaks; don't timeout mid-burst
 function warmStatus(html) { const st = document.getElementById('micstatus'); if (st) st.innerHTML = html; }
 function warmMicUI(on) { const mic = document.getElementById('micbtn'); if (mic) { mic.classList.toggle('on', on); mic.textContent = on ? '⏹' : '🎤'; mic.setAttribute('aria-label', on ? '停止听' : '开始念'); } }
 function warmListening() { return !!(WARM && WARM.q === CUR && CUR && !CUR.answered); }
@@ -2173,16 +2204,19 @@ function stopWarmListen(keepMsg) {
   if (!keepMsg && CUR && CUR.qtype === 'warmup' && !CUR.answered) warmStatus('已暂停（进度 ' + (CUR.warmCount || 0) + '/3 保留）· 点麦克风继续念');
   return w;
 }
-function warmUtter(q, text, alts) {   // one completed utterance
+function warmUtter(q, text, alts) {   // one completed utterance — may contain the target repeated several times
   if (q !== CUR || q.answered) return;
   text = (text || '').trim(); if (!text) return;
   const heard = document.getElementById('heard'); if (heard) heard.textContent = '你说：' + text;
-  let ok = checkSpeech(q.w, text).ok;
-  if (!ok) for (const a of (alts || [])) if (a && checkSpeech(q.w, a).ok) { ok = true; break; }
-  if (ok) {
+  let hits = countSpeechHits(q.w, text);
+  for (const a of (alts || [])) if (a) hits = Math.max(hits, countSpeechHits(q.w, a));
+  if (hits > 0) {
     if (WARM && WARM.q === q) WARM.emptyEnds = 0;
-    q.warmCount = (q.warmCount || 0) + 1;
-    try { Sfx.play('hit', q.warmCount); } catch (e) { }
+    const add = Math.min(hits, 3 - (q.warmCount || 0));
+    for (let i = 0; i < add; i++) {
+      q.warmCount = (q.warmCount || 0) + 1;
+      try { Sfx.play('hit', q.warmCount); } catch (e) { }
+    }
     const dots = document.getElementById('warmdots'); if (dots) dots.innerHTML = warmDotsHTML(q.warmCount);
     const lab = document.querySelector('.warmlabel'); if (lab) lab.innerHTML = '念对 <b>' + q.warmCount + '</b> / 3 遍';
     if (q.warmCount >= 3) { stopWarmListen(true); finishWarmUp('spoke'); return; }
@@ -2198,26 +2232,26 @@ function startWarmListen() {
   let Rec; try { Rec = window.SpeechRecognition || window.webkitSpeechRecognition; } catch (e) { Rec = null; }
   if (!Rec) { toast('此设备暂不支持口语识别，可用打字或跳过热身'); return; }
   const q = CUR;
-  if (!WARM || WARM.q !== q) { stopRecog(); WARM = { q, restarts: 0 }; }
+  if (!WARM || WARM.q !== q) { stopRecog(); WARM = { q, restarts: 0, emptyEnds: 0 }; }
   const sid = ++RECOG_SEQ, r = new Rec(); WARM.sid = sid;
   RECOG = r; RECOG_LISTEN = true;
   const live = () => WARM && WARM.sid === sid && WARM.q === q && CUR === q && !q.answered;
-  const counted = new Set(); let interim = '', lastText = '', lastAt = 0;
+  const counted = new Set(); let interim = '';   // only dedupe by resultIndex (same final event), never by transcript text
   r.lang = 'en-US'; r.interimResults = true; r.continuous = true; r.maxAlternatives = 3;
   warmMicUI(true);
   warmStatus((q.warmCount ? '念对 ' + q.warmCount + '/3 · ' : '') + '正在听… 连续念，不用再点麦克风');
-  const arm = () => { if (RECOG_TIMER) clearTimeout(RECOG_TIMER); RECOG_TIMER = setTimeout(() => { if (!live()) return; stopWarmListen(true); micProblemWarm('timeout'); }, MIC_TIMEOUT * 2); };
+  const arm = () => { if (RECOG_TIMER) clearTimeout(RECOG_TIMER); RECOG_TIMER = setTimeout(() => { if (!live()) return; stopWarmListen(true); micProblemWarm('timeout'); }, WARM_SILENCE_MS); };
   arm();
   r.onresult = ev => {
     if (!live()) return;
-    arm(); let shown = '';
+    arm(); WARM.emptyEnds = 0;   // any result (incl. interim) = still speaking
+    let shown = '';
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
       const res = ev.results[i], t = (res[0] && res[0].transcript || '').trim();
       if (res.isFinal) {
         interim = '';
-        const key = t.toLowerCase();
-        if (counted.has(i) || (key === lastText && Date.now() - lastAt < 1500)) continue;
-        counted.add(i); lastText = key; lastAt = Date.now();
+        if (counted.has(i)) continue;   // same final index only (ignore duplicate events)
+        counted.add(i);
         const alts = Array.from({ length: res.length || 1 }, (_, k) => res[k] && res[k].transcript).filter(Boolean).map(x => x.trim());
         warmUtter(q, t, alts);
         if (!live()) return;
@@ -2237,8 +2271,7 @@ function startWarmListen() {
     if (!live()) return;
     if (interim) {
       const t = interim; interim = '';
-      const key = t.toLowerCase();
-      if (!(key === lastText && Date.now() - lastAt < 1500)) { lastText = key; lastAt = Date.now(); warmUtter(q, t, null); }
+      warmUtter(q, t, null);   // Safari interim-only end — countSpeechHits handles repeats
       if (!live()) return;
     }
     // Safari stops after each utterance: keep listening automatically (progress kept)
@@ -3277,9 +3310,9 @@ function sliceEnd(res, before) {
     pointsHtml: `切对 <b>${res.correct}</b> 个 → <b>+${pts}</b> XP · <b>+${coins}</b> 🪙${bonus > 1 ? `（今天第 ${before + 1} 局，奖励 ×${bonus}）` : ''}${medal ? ' · 🏅' : ''}`,
     nextBonus: sliceBonus(before + 1) > 1 ? sliceBonus(before + 1) : 0 };
 }
-window.VG = { startWarmListen, stopWarmListen, get WARM() { return WARM; }, finishWarmUp, warmHit, proceedAfterWarmUp, renderWarmUp, armHeard, slicePool, sliceItem, sliceBonus, sliceStars, sliceWeak, sliceEnd, startSlice, get VSlice() { return VSlice; }, WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
+window.VG = { startWarmListen, stopWarmListen, get WARM() { return WARM; }, finishWarmUp, warmHit, warmUtter, countSpeechHits, proceedAfterWarmUp, renderWarmUp, armHeard, slicePool, sliceItem, sliceBonus, sliceStars, sliceWeak, sliceEnd, startSlice, get VSlice() { return VSlice; }, WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
   Importer, rebuildData, importItems, deleteSection, handleWordFiles, get PREVIEW() { return PREVIEW; }, exportText, importText, saveBackupFile, copyBackupCode, storageCheck, secIdFor, BUILTIN_IDS,
-  dueList, todayDue, newList, newLeftToday, todayPick, setPick, pickedToday, nextUnfinished, migrate, streak, levelInfo, checkSpell, checkSpeech, fuzzyNorm, levenshtein, phraseSimilarity, speechTargets, speechSupported, get SPEECH_OK() { return SPEECH_OK; }, variants, distractors, bonusList, bonusFakes, buildQ, chooseType, startSession, submit, nextCard, ACT, today, hintText, renderHome, stopRecog,
+  dueList, todayDue, newList, newLeftToday, todayPick, setPick, pickedToday, nextUnfinished, migrate, streak, levelInfo, checkSpell, checkSpeech, countSpeechHits, fuzzyNorm, levenshtein, phraseSimilarity, speechTargets, speechSupported, get SPEECH_OK() { return SPEECH_OK; }, variants, distractors, bonusList, bonusFakes, buildQ, chooseType, startSession, submit, nextCard, ACT, today, hintText, renderHome, stopRecog,
   applyTheme, THEMES, Sfx, privateTip, mergeStates, syncFromStorage, get RECOVERED() { return RECOVERED; }, MIC_MSG, micProblem, get RECOG() { return RECOG; }, Study, inSession, sanitizeCustom, get LOAD_ERR() { return LOAD_ERR; }, studyToday, studyWeek, studyTotal, studySec, last7Days, fmtStudy, fmtStudyShort, weekKey, pruneStudyTime, checkStudyMilestones, IDLE_MS };
 boot();
 </script></body></html>
