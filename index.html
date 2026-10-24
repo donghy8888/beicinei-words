@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261024-160103 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261024-175807 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -2217,6 +2217,11 @@ const WARM_SILENCE_MS = Math.max(MIC_TIMEOUT * 4, 20000);   // kids pause betwee
 function warmStatus(html) { const st = document.getElementById('micstatus'); if (st) st.innerHTML = html; }
 function warmMicUI(on) { const mic = document.getElementById('micbtn'); if (mic) { mic.classList.toggle('on', on); mic.textContent = on ? '⏹' : '🎤'; mic.setAttribute('aria-label', on ? '停止听' : '开始念'); } }
 function warmListening() { return !!(WARM && WARM.q === CUR && CUR && !CUR.answered); }
+function maybeFinishWarmFromCount() {
+  if (!CUR || CUR.qtype !== 'warmup' || CUR.answered || (CUR.warmCount || 0) < 3) return false;
+  finishWarmUp('spoke');
+  return true;
+}
 function stopWarmListen(keepMsg) {
   const w = WARM; WARM = null;
   if (RECOG_TIMER) { clearTimeout(RECOG_TIMER); RECOG_TIMER = null; }
@@ -2224,7 +2229,10 @@ function stopWarmListen(keepMsg) {
   const r = RECOG; RECOG = null;
   try { if (r) r.stop(); } catch (e) { } try { if (r) r.abort(); } catch (e) { }
   warmMicUI(false);
-  if (!keepMsg && CUR && CUR.qtype === 'warmup' && !CUR.answered) warmStatus('已暂停（进度 ' + (CUR.warmCount || 0) + '/3 保留）· 点麦克风继续念');
+  // Manual stop (!keepMsg): finish if already at 3; else pause with progress. finishWarmUp → stopWarmListen(true) so no loop.
+  if (!keepMsg && CUR && CUR.qtype === 'warmup' && !CUR.answered) {
+    if (!maybeFinishWarmFromCount()) warmStatus('已暂停（进度 ' + (CUR.warmCount || 0) + '/3 保留）· 点麦克风继续念');
+  }
   return w;
 }
 function warmUtter(q, text, alts) {   // one completed utterance — may contain the target repeated several times
@@ -2255,7 +2263,7 @@ function startWarmListen() {
   let Rec; try { Rec = window.SpeechRecognition || window.webkitSpeechRecognition; } catch (e) { Rec = null; }
   if (!Rec) { toast('此设备暂不支持口语识别，可用打字或跳过热身'); return; }
   const q = CUR;
-  if (!WARM || WARM.q !== q) { stopRecog(); WARM = { q, restarts: 0, emptyEnds: 0 }; }
+  if (!WARM || WARM.q !== q) { stopRecog(); WARM = { q, restarts: 0, emptyEnds: 0, interim: '' }; }
   const sid = ++RECOG_SEQ, r = new Rec(); WARM.sid = sid;
   RECOG = r; RECOG_LISTEN = true;
   const live = () => WARM && WARM.sid === sid && WARM.q === q && CUR === q && !q.answered;
@@ -2273,14 +2281,26 @@ function startWarmListen() {
       const res = ev.results[i], t = (res[0] && res[0].transcript || '').trim();
       if (res.isFinal) {
         interim = '';
+        if (WARM) WARM.interim = '';
         if (counted.has(i)) continue;   // same final index only (ignore duplicate events)
         counted.add(i);
         const alts = Array.from({ length: res.length || 1 }, (_, k) => res[k] && res[k].transcript).filter(Boolean).map(x => x.trim());
         warmUtter(q, t, alts);
         if (!live()) return;
-      } else { interim = t; shown = t; }
+      } else {
+        interim = t; shown = t;
+        if (WARM) WARM.interim = t;
+        // Strong interim covering remaining need → finish without waiting for Safari final (avoid double-count mid-progress)
+        const need = 3 - (q.warmCount || 0);
+        if (need > 0 && countSpeechHits(q.w, t) >= need) {
+          interim = '';
+          if (WARM) WARM.interim = '';
+          warmUtter(q, t, null);
+          if (!live()) return;
+        }
+      }
     }
-    if (shown) { const h = document.getElementById('heard'); if (h) h.textContent = '你说：' + shown + ' …'; }
+    if (shown && live()) { const h = document.getElementById('heard'); if (h) h.textContent = '你说：' + shown + ' …'; }
   };
   r.onerror = ev => {
     if (!live()) return;
@@ -2294,6 +2314,7 @@ function startWarmListen() {
     if (!live()) return;
     if (interim) {
       const t = interim; interim = '';
+      if (WARM) WARM.interim = '';
       warmUtter(q, t, null);   // Safari interim-only end — countSpeechHits handles repeats
       if (!live()) return;
     }
@@ -2470,10 +2491,13 @@ function finishWarmUp(how) {
   CUR.answered = true;   // gate done; does NOT call submit / Sched
   const spoke = how === 'spoke';
   if (spoke) {
+    const dots = document.getElementById('warmdots'); if (dots) dots.innerHTML = warmDotsHTML(3);
+    const lab = document.querySelector('.warmlabel'); if (lab) lab.innerHTML = '念对 <b>3</b> / 3 遍';
+    warmStatus('✅ 念对 3/3 · 进入挑战');
     S.xp += 3; if (SES) SES.xp += 3; save();
     toast('念得真棒！+3 XP 🌟');
     try { Sfx.play('hit', 2); } catch (e) { }
-    setTimeout(() => { if (CUR && CUR.qtype === 'warmup') proceedAfterWarmUp(); }, 450);
+    setTimeout(() => { if (CUR && CUR.qtype === 'warmup') proceedAfterWarmUp(); }, 200);
   } else {
     toast(how === 'type' ? '打字过关，进入挑战 ✏️' : '跳过热身，进入挑战');
     proceedAfterWarmUp();   // skip/type: enter the quiz immediately (tests + snappy UX)
@@ -3120,7 +3144,30 @@ const ACT = {
   more: d => { today().extra = (today().extra || 0) + 5; save(); startSession(d && d.sec ? d.sec : null, 'new'); },
   goal: d => { S.settings.dailyNew = Math.max(1, Math.min(100, S.settings.dailyNew + (+d.d))); save(); $('#app .x') ? renderSettings() : renderHome(); },
   learned: () => { if (CUR && CUR.qtype === 'warmup') finishWarmUp('skip'); else startQuizForNew(); },
-  mic: () => { if (!CUR || CUR.answered) return; if (CUR.qtype === 'warmup') { if (warmListening()) stopWarmListen(); else startWarmListen(); return; } if (RECOG_LISTEN) stopRecog(); else startRecog(); },
+  mic: () => {
+    if (!CUR || CUR.answered) return;
+    if (CUR.qtype === 'warmup') {
+      if (warmListening()) {
+        // Flush pending interim before abort drops it; complete if that (or existing count) reaches 3
+        let pending = (WARM && WARM.interim) || '';
+        if (!pending) {
+          // Only treat #heard as pending interim when it still shows the interim ellipsis (finals must not re-count)
+          const h = document.getElementById('heard');
+          const ht = (h && h.textContent) || '';
+          if (ht.indexOf('你说：') === 0 && /…\s*$/.test(ht)) pending = ht.slice(3).replace(/\s*…\s*$/, '').trim();
+        }
+        stopWarmListen(true);
+        if (CUR && CUR.qtype === 'warmup' && !CUR.answered && pending) warmUtter(CUR, pending, null);
+        if (!maybeFinishWarmFromCount() && CUR && CUR.qtype === 'warmup' && !CUR.answered) {
+          warmStatus('已暂停（进度 ' + (CUR.warmCount || 0) + '/3 保留）· 点麦克风继续念');
+        }
+        return;
+      }
+      startWarmListen();
+      return;
+    }
+    if (RECOG_LISTEN) stopRecog(); else startRecog();
+  },
   speakCheck: (opt) => {
     if (!CUR || CUR.answered || (CUR.qtype !== 'speak' && CUR.qtype !== 'warmup')) return;
     const auto = !!(opt && opt.auto);
@@ -3332,7 +3379,7 @@ function sliceEnd(res, before) {
     pointsHtml: `切对 <b>${res.correct}</b> 个 → <b>+${pts}</b> XP · <b>+${coins}</b> 🪙${bonus > 1 ? `（今天第 ${before + 1} 局，奖励 ×${bonus}）` : ''}${medal ? ' · 🏅' : ''}`,
     nextBonus: sliceBonus(before + 1) > 1 ? sliceBonus(before + 1) : 0 };
 }
-window.VG = { startWarmListen, stopWarmListen, get WARM() { return WARM; }, finishWarmUp, warmHit, warmUtter, countSpeechHits, proceedAfterWarmUp, renderWarmUp, armHeard, slicePool, sliceItem, sliceBonus, sliceStars, sliceWeak, sliceEnd, startSlice, get VSlice() { return VSlice; }, WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
+window.VG = { startWarmListen, stopWarmListen, maybeFinishWarmFromCount, get WARM() { return WARM; }, finishWarmUp, warmHit, warmUtter, countSpeechHits, proceedAfterWarmUp, renderWarmUp, armHeard, slicePool, sliceItem, sliceBonus, sliceStars, sliceWeak, sliceEnd, startSlice, get VSlice() { return VSlice; }, WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
   Importer, rebuildData, importItems, deleteSection, handleWordFiles, get PREVIEW() { return PREVIEW; }, exportText, importText, saveBackupFile, copyBackupCode, storageCheck, secIdFor, BUILTIN_IDS,
   dueList, todayDue, newList, newLeftToday, todayPick, setPick, pickedToday, nextUnfinished, migrate, streak, levelInfo, checkSpell, checkSpeech, countSpeechHits, fuzzyNorm, levenshtein, phraseSimilarity, speechTargets, speechSupported, get SPEECH_OK() { return SPEECH_OK; }, variants, distractors, bonusList, bonusFakes, buildQ, chooseType, startSession, submit, nextCard, ACT, today, hintText, renderHome, stopRecog,
   applyTheme, THEMES, Sfx, privateTip, mergeStates, syncFromStorage, get RECOVERED() { return RECOVERED; }, MIC_MSG, micProblem, get RECOG() { return RECOG; }, Study, inSession, sanitizeCustom, get LOAD_ERR() { return LOAD_ERR; }, studyToday, studyWeek, studyTotal, studySec, last7Days, fmtStudy, fmtStudyShort, weekKey, pruneStudyTime, checkStudyMilestones, IDLE_MS };
