@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261024-104422 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261024-111756 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -2052,14 +2052,23 @@ const MIC_MSG = {
 };
 const MIC_TIMEOUT = 9000;
 let RECOG_TIMER = null, RECOG_SEQ = 0;
-// one fresh recognition = one judge: enable/disable the 判定 button
-function judgeBtn(on) { document.querySelectorAll('[data-act=speakCheck]').forEach(b => { b.disabled = !on; b.setAttribute('aria-disabled', on ? 'false' : 'true'); b.classList.toggle('off', !on); }); }
 function micProblem(code) {
   const st = document.getElementById('micstatus'); if (!st || !CUR || CUR.answered) return;
   CUR.micFails = (CUR.micFails || 0) + 1;
   const msg = MIC_MSG[code] || '识别出错了，可以重试或「⌨️ 打字代替」';
   const canRetry = code !== 'not-allowed' && code !== 'service-not-allowed';
   st.innerHTML = `<span class="micerr">⚠️ ${esc(msg)}</span>${canRetry ? ' <button class="btn2 sm" data-act="mic">🔁 重试</button>' : ''}`;
+}
+// Apply one recognition result (final, or best interim when the session ends). Each mic session auto-judges at most once.
+function armHeard(q, text, alts, rid) {
+  text = (text || '').trim(); if (!q || q.answered || !text) return false;
+  q._heard = text; q._alts = alts || []; q._fresh = rid; q._interim = '';
+  const heard = document.getElementById('heard'); if (heard) heard.textContent = '你说：' + text;
+  return true;
+}
+function idleMicStatus() {
+  const st = document.getElementById('micstatus'); if (!st || !CUR || CUR.answered) return;
+  st.textContent = CUR.qtype === 'warmup' ? ('点麦克风，大声念第 ' + ((CUR.warmCount || 0) + 1) + ' 遍') : '点麦克风，用英语说出这个词';
 }
 function stopRecog() {
   if (RECOG_TIMER) { clearTimeout(RECOG_TIMER); RECOG_TIMER = null; }
@@ -2068,7 +2077,7 @@ function stopRecog() {
   try { if (RECOG) RECOG.abort(); } catch (e) { }
   RECOG = null;
   const mic = document.getElementById('micbtn'); if (mic) { mic.classList.remove('on'); mic.textContent = '🎤'; }
-  const st = document.getElementById('micstatus'); if (st && CUR && !CUR.answered) st.textContent = CUR.qtype === 'warmup' ? ('点麦克风，大声念第 ' + ((CUR.warmCount || 0) + 1) + ' 遍') : '点麦克风，用英语说出这个词';
+  if (CUR && !CUR.answered && !CUR._fresh) idleMicStatus();
 }
 function startRecog() {
   if (!SPEECH_OK) { toast('此设备暂不支持口语识别，已跳过'); return; }
@@ -2078,14 +2087,25 @@ function startRecog() {
   if (!Rec) { toast('此设备暂不支持口语识别，已跳过'); return; }
   const r = new Rec(), q = CUR, rid = ++RECOG_SEQ;
   RECOG = r; RECOG_LISTEN = true;
-  q._heard = ''; q._alts = null; q._fresh = 0; judgeBtn(false);   // a new mic session invalidates any unjudged older result
-  const stale = () => RECOG !== r || CUR !== q || q.answered;   // late events from an old recognizer / card
+  q._heard = ''; q._alts = null; q._fresh = 0; q._interim = ''; q._rid = rid; q._judged = false;   // new session: at most one auto-judge
+  const stale = () => CUR !== q || q.answered || q._rid !== rid;   // late events from an old recognizer / card
   r.lang = 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 3;
   const mic = document.getElementById('micbtn'); const st = document.getElementById('micstatus'); const heard = document.getElementById('heard');
   if (mic) { mic.classList.add('on'); mic.textContent = '⏹'; }
   if (st) st.textContent = '正在听… 请说英语';
+  if (heard) heard.textContent = '';
+  const finishListen = () => {
+    if (RECOG === r) { RECOG_LISTEN = false; RECOG = null; }
+    if (RECOG_TIMER) { clearTimeout(RECOG_TIMER); RECOG_TIMER = null; }
+    if (mic) { mic.classList.remove('on'); mic.textContent = '🎤'; }
+  };
+  const autoJudge = () => {
+    if (stale() || q._judged || !q._fresh) return;
+    q._judged = true;   // one recognition session → one auto-judge
+    ACT.speakCheck({ auto: true });
+  };
   r.onresult = ev => {
-    if (stale()) return;
+    if (stale() || q._judged) return;
     let interim = '', final = '', finals = [];
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
       const t = ev.results[i][0].transcript;
@@ -2093,31 +2113,49 @@ function startRecog() {
     }
     const show = (final || interim).trim();
     if (heard) heard.textContent = show ? ('你说：' + show) : '';
+    if (interim.trim() && !final.trim()) q._interim = interim.trim();
     if (final.trim()) {
-      // maxAlternatives=3: also judge the recognizer's other guesses (fewer false "wrong" for accents)
       const alts = finals.length === 1 ? Array.from({ length: finals[0].length || 1 }, (_, k) => finals[0][k] && finals[0][k].transcript).filter(Boolean).map(x => x.trim()) : [];
-      q._heard = final.trim(); q._alts = alts; q._fresh = rid; stopRecog(); judgeBtn(true); ACT.speakCheck();   // auto-judge consumes this result once
+      armHeard(q, final.trim(), alts, rid);
+      finishListen();
+      try { r.stop(); } catch (e) { }
+      autoJudge();
     }
   };
   r.onerror = ev => {
     if (stale()) return;
     const code = ev && ev.error;
-    stopRecog();
-    if (code === 'not-allowed' || code === 'service-not-allowed') { if (SES) SES.noSpeech = true; }   // no more speak cards this session
+    finishListen();
+    if (q._judged) return;
+    if (q._interim && armHeard(q, q._interim, null, rid)) { autoJudge(); return; }   // Safari often ends with interim only
+    if (code === 'not-allowed' || code === 'service-not-allowed') { if (SES) SES.noSpeech = true; }
+    if (code === 'aborted' && q._fresh) { autoJudge(); return; }
     micProblem(code);
   };
-  r.onnomatch = () => { if (stale()) return; stopRecog(); micProblem('nomatch'); };
-  r.onend = () => {
-    if (RECOG !== r) return;   // ended after we already stopped / replaced it
-    const had = !!(q._heard || '').trim();
-    RECOG_LISTEN = false; RECOG = null; if (RECOG_TIMER) { clearTimeout(RECOG_TIMER); RECOG_TIMER = null; }
-    if (mic) { mic.classList.remove('on'); mic.textContent = '🎤'; }
-    if (CUR !== q || q.answered) return;
-    if (had) { if (st) st.textContent = '点「判定」或再说一次'; }
-    else micProblem('nomatch');   // ended without any result
+  r.onnomatch = () => {
+    if (stale() || q._judged) return;
+    finishListen();
+    if (q._interim && armHeard(q, q._interim, null, rid)) autoJudge();
+    else micProblem('nomatch');
   };
-  RECOG_TIMER = setTimeout(() => { if (RECOG === r && !stale() && !(q._heard || '').trim()) { stopRecog(); micProblem('timeout'); } }, MIC_TIMEOUT);
-  try { r.start(); } catch (e) { stopRecog(); micProblem(e && e.name === 'NotAllowedError' ? 'not-allowed' : 'audio-capture'); }
+  r.onend = () => {
+    if (q._rid !== rid) return;   // ended after we already replaced this session
+    const wasListening = RECOG === r || RECOG_LISTEN;
+    finishListen();
+    if (stale() || q._judged) return;
+    if (q._fresh) { autoJudge(); return; }   // final already armed but judge not run yet
+    if (q._interim && armHeard(q, q._interim, null, rid)) { autoJudge(); return; }   // promote best interim (iPad Safari)
+    if (wasListening) micProblem('nomatch');
+  };
+  RECOG_TIMER = setTimeout(() => {
+    if (q._rid !== rid || stale() || q._judged) return;
+    const pending = (q._heard || q._interim || '').trim();
+    finishListen();
+    try { r.stop(); } catch (e) { }
+    if (pending && armHeard(q, q._heard || q._interim, q._alts, rid)) autoJudge();
+    else micProblem('timeout');
+  }, MIC_TIMEOUT);
+  try { r.start(); } catch (e) { finishListen(); micProblem(e && e.name === 'NotAllowedError' ? 'not-allowed' : 'audio-capture'); }
 }
 const displayEn = w => w.en.replace(/\s*\.\.\.$/, '').replace(/,$/, '');
 function hintText(w, level) {
@@ -2295,10 +2333,10 @@ function warmHit(heard) {
   const dots = document.getElementById('warmdots');
   if (dots) dots.innerHTML = warmDotsHTML(CUR.warmCount);
   const lab = document.querySelector('.warmlabel'); if (lab) lab.innerHTML = '念对 <b>' + CUR.warmCount + '</b> / 3 遍';
-  if (st) st.textContent = '✅ 第 ' + CUR.warmCount + ' 遍过关！再念一次（' + CUR.warmCount + '/3）';
+  if (st) st.textContent = '✅ 第 ' + CUR.warmCount + ' 遍过关！请再点麦克风念第 ' + (CUR.warmCount + 1) + ' 遍';
   const heardEl = document.getElementById('heard');
   if (heardEl) heardEl.textContent = heard ? ('你说：' + heard) : '';
-  toast(CUR.warmCount + '/3 再念一次！');
+  toast(CUR.warmCount + '/3 再点麦克风念一次！');
   if (S.settings.autoSpeak) setTimeout(() => { if (CUR && CUR.warmUp && !CUR.answered) speak(CUR.w.en); }, 350);
 }
 function warmDotsHTML(n) {
@@ -2318,7 +2356,7 @@ function renderWarmUp() {
     ? `<button class="mic" id="micbtn" data-act="mic" aria-label="开始/停止说英语">🎤</button>
        <div class="center muted" id="micstatus">点麦克风，大声念第 ${n + 1} 遍</div>
        <div class="center heard" id="heard"></div>
-       <div class="row"><button class="btn2 off" data-act="speakCheck" disabled aria-disabled="true">✅ 判定这一遍</button></div>`
+       <p class="muted center" style="margin:6px 0 0">念完后会自动判定；不对就再点麦克风念一次</p>`
     : `<div class="center muted" id="micstatus">这台设备暂不支持语音识别，请打字或跳过热身</div><div class="center heard" id="heard"></div>`;
   app().innerHTML = `<div class="battlehead">${barHTML()}${monsterHTML(w, CUR.mode === 'practice' ? 'review' : CUR.mode)}</div>` +
     `<div class="card learn warm"><div class="qtype">${title}</div>
@@ -2494,7 +2532,8 @@ function renderQ() {
      <button class="mic" id="micbtn" data-act="mic" aria-label="开始/停止说英语">🎤</button>
      <div class="center muted" id="micstatus">点麦克风，用英语说出这个词</div>
      <div class="center heard" id="heard"></div>
-     <div class="row"><button class="btn2 off" data-act="speakCheck" disabled aria-disabled="true">✅ 判定</button><button class="btn2" data-act="giveup">🤔 不会</button></div>
+     <p class="muted center" style="margin:6px 0 0">说完后会自动判定</p>
+     <div class="row"><button class="btn2" data-act="giveup">🤔 不会</button></div>
      <div class="row" style="margin-top:8px"><button class="btn2" data-act="speakType">⌨️ 打字代替</button><button class="btn2" data-act="speakSkip">⏭ 跳过（换成选择题）</button></div>`;
   const opts = q.opts ? `<div class="opts">${q.opts.map((o, i) => `<button class="opt" data-act="opt" data-i="${i}">${esc(o)}</button>`).join('')}</div>` : '';
   app().innerHTML = `<div class="battlehead">${barHTML()}${monsterHTML(w, q.mode === 'bonus' ? 'bonus' : q.mode)}</div>` + `<div class="card">${body}${opts}<div id="fb" aria-live="polite"></div></div>`;
@@ -2939,27 +2978,34 @@ const ACT = {
   goal: d => { S.settings.dailyNew = Math.max(1, Math.min(100, S.settings.dailyNew + (+d.d))); save(); $('#app .x') ? renderSettings() : renderHome(); },
   learned: () => { if (CUR && CUR.qtype === 'warmup') finishWarmUp('skip'); else startQuizForNew(); },
   mic: () => { if (!CUR || CUR.answered) return; if (RECOG_LISTEN) stopRecog(); else startRecog(); },
-  speakCheck: () => {
+  speakCheck: (opt) => {
     if (!CUR || CUR.answered || (CUR.qtype !== 'speak' && CUR.qtype !== 'warmup')) return;
+    const auto = !!(opt && opt.auto);
     stopRecog();
-    // each judge consumes exactly one fresh recognition from a mic session started after the previous judge
+    // each recognition session auto-judges at most once (consumed via _fresh)
     const heard = (CUR._heard || '').trim();
-    if (!CUR._fresh || !heard) { judgeBtn(false); const st = document.getElementById('micstatus'); if (st) st.innerHTML = '<span class="micerr">请先点麦克风念一遍</span>'; toast('请先点麦克风念一遍'); return; }
+    if (!CUR._fresh || !heard) {
+      if (auto) return;   // nothing to score from this session
+      const st = document.getElementById('micstatus'); if (st) st.innerHTML = '<span class="micerr">请先点麦克风念一遍</span>'; toast('请先点麦克风念一遍'); return;
+    }
     const alts = CUR._alts || [];
-    CUR._fresh = 0; CUR._alts = null; CUR._heard = ''; judgeBtn(false);   // consumed (blocks double taps / DOM re-read)
-    const heardEl = document.getElementById('heard'); if (heardEl) heardEl.textContent = '';
+    CUR._fresh = 0; CUR._alts = null;   // consumed
+    const shown = heard;
     let r = checkSpeech(CUR.w, heard), used = heard;
     if (!r.ok) for (const a of alts) { const ra = checkSpeech(CUR.w, a); if (ra.ok) { r = ra; used = a; break; } }
+    const heardEl = document.getElementById('heard');
+    if (heardEl) heardEl.textContent = '你说：' + shown;   // keep visible briefly so they see what was heard
     if (CUR.qtype === 'warmup') {
+      CUR._heard = '';
       if (r.ok) warmHit(used);
       else {
         const st = document.getElementById('micstatus');
-        if (st) st.innerHTML = '<span class="micerr">⚠️ 还不太像，再试一次（进度 ' + (CUR.warmCount || 0) + '/3）</span> <button class="btn2 sm" data-act="mic">🔁 重试</button>';
+        if (st) st.innerHTML = '<span class="micerr">⚠️ 还不太像（听到「' + esc(shown) + '」），再点麦克风念一次（进度 ' + (CUR.warmCount || 0) + '/3）</span> <button class="btn2 sm" data-act="mic">🔁 重试</button>';
         try { Sfx.play('thud'); } catch (e) { }
       }
       return;
     }
-    CUR._heard = used;   // feedback screen may show what was recognised
+    CUR._heard = used;
     submit(!!r.ok);
   },
   // mic trouble: warm-up → finish gate; speak quiz → typed / multiple-choice (no penalty)
@@ -3143,7 +3189,7 @@ function sliceEnd(res, before) {
     pointsHtml: `切对 <b>${res.correct}</b> 个 → <b>+${pts}</b> XP · <b>+${coins}</b> 🪙${bonus > 1 ? `（今天第 ${before + 1} 局，奖励 ×${bonus}）` : ''}${medal ? ' · 🏅' : ''}`,
     nextBonus: sliceBonus(before + 1) > 1 ? sliceBonus(before + 1) : 0 };
 }
-window.VG = { finishWarmUp, warmHit, proceedAfterWarmUp, renderWarmUp, slicePool, sliceItem, sliceBonus, sliceStars, sliceWeak, sliceEnd, startSlice, get VSlice() { return VSlice; }, WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
+window.VG = { finishWarmUp, warmHit, proceedAfterWarmUp, renderWarmUp, armHeard, slicePool, sliceItem, sliceBonus, sliceStars, sliceWeak, sliceEnd, startSlice, get VSlice() { return VSlice; }, WORDS, SECTIONS, TIPS, SECBY, BYID, INTERVALS, Sched, get S() { return S; }, get SES() { return SES; }, get CUR() { return CUR; }, setClock(f) { clock = f; },
   Importer, rebuildData, importItems, deleteSection, handleWordFiles, get PREVIEW() { return PREVIEW; }, exportText, importText, saveBackupFile, copyBackupCode, storageCheck, secIdFor, BUILTIN_IDS,
   dueList, todayDue, newList, newLeftToday, todayPick, setPick, pickedToday, nextUnfinished, migrate, streak, levelInfo, checkSpell, checkSpeech, fuzzyNorm, levenshtein, phraseSimilarity, speechTargets, speechSupported, get SPEECH_OK() { return SPEECH_OK; }, variants, distractors, bonusList, bonusFakes, buildQ, chooseType, startSession, submit, nextCard, ACT, today, hintText, renderHome, stopRecog,
   applyTheme, THEMES, Sfx, privateTip, mergeStates, syncFromStorage, get RECOVERED() { return RECOVERED; }, MIC_MSG, micProblem, get RECOG() { return RECOG; }, Study, inSession, sanitizeCustom, get LOAD_ERR() { return LOAD_ERR; }, studyToday, studyWeek, studyTotal, studySec, last7Days, fmtStudy, fmtStudyShort, weekKey, pruneStudyTime, checkStudyMilestones, IDLE_MS };
