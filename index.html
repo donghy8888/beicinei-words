@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="eye"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#E6EDD9"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261024-175807 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+<title>背单词闯关 · 8A</title><script>try{var _t=(JSON.parse(localStorage.getItem('vocab8a_ebbinghaus_v1')||'{}').settings||{}).theme;if(!/^(eye|night|classic)$/.test(_t||''))_t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'night':'eye';document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script><!-- vocab-build: 20261109-131312 --><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 html{background:#2b1055 linear-gradient(160deg,#2b1055 0%,#3a1c71 35%,#1e3c72 100%) no-repeat;min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
@@ -2408,7 +2408,7 @@ function chooseType(w, r, mode) {
   let t = ['cn2en', 'en2cn'];
   if (TTS) t.push('listen');
   if (mode !== 'practice') {
-    if (canSpell && s >= 2) { t.push('spell'); if (s >= 4) t.push('spell', 'spell'); }
+    // 拼写题已按用户要求关闭（不出拼写）
     if (w.type === 'sentence' && s >= 2 && nWords <= 18 && nWords >= 3) t.push('order', 'order');
     if (canSpeak && s >= 1) { t.push('speak'); if (Math.random() < 0.5) t.push('speak'); }
   } else if (canSpeak && Math.random() < 0.15) {
@@ -3221,7 +3221,7 @@ const ACT = {
     }
     if (CUR.qtype !== 'speak') return;
     stopRecog(); const q = CUR;
-    const t = /^[A-Za-z][A-Za-z '’.,?!-]*$/.test(displayEn(q.w)) ? 'spell' : 'cn2en';
+    const t = 'cn2en';   // 不出拼写题：口语题改成看中文选英文
     CUR = Object.assign({}, q, buildQ(q.w, t), { w: q.w, mode: q.mode, answered: false, _heard: '', _alts: null, micFails: 0 }); renderQ();
   },
   warmTypeCheck: () => {
